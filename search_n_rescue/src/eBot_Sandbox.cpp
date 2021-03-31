@@ -8,7 +8,9 @@
 
 //---------------------------------- INCLUDES -----------------------------------
 
+
 #include "eBot_Sandbox.h"
+#include <stdlib.h>
 
 
 
@@ -56,27 +58,7 @@ void send_sensor_data(void)
 	}
 }
 
-/*
- * eBot_Sandbox.cpp
- *
- * Created on: 11-Jan-2021
- * Author: TAs of CS 684 Spring 2020
- */
 
-
-//---------------------------------- INCLUDES -----------------------------------
-
-#include "eBot_Sandbox.h"
-#include <stdlib.h>
-
-
-//------------------------------ GLOBAL VARIABLES -------------------------------
-
-// To store 8-bit data of left, center and right white line sensors
-unsigned char left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data;
-
-// To store 8-bit data of 5th IR proximity sensors
-unsigned char ir_prox_5_sensor_data;
 
 // To store the eBot's current and Goal location
 typedef struct
@@ -87,8 +69,6 @@ tuple curr_loc = {4,0}, goal_loc = {4,5};
 
 // To store the direction in which eBot is currently facing
 char dir_flag = 'n';
-char turn = 0;
-char reverse = 0;
 
 //---------------------------------- FUNCTIONS ----------------------------------
 
@@ -109,15 +89,7 @@ void readSensor()
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	if(curr_loc.y == goal_loc.y - 1)
 	printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
-}
-
-void reverseSensorValues() {
-	left_wl_sensor_data = 255 - left_wl_sensor_data;
-	center_wl_sensor_data = 255 - center_wl_sensor_data;
-	right_wl_sensor_data = 255 - right_wl_sensor_data;
-	turn = 1;
 }
 
 void forward_wls(unsigned char node)
@@ -128,31 +100,26 @@ void forward_wls(unsigned char node)
 	{
 		while(1) {
 
-			forward();                    // WBW & BWB
-			velocity(200,200);
+
 
 			readSensor();
 
-			if((curr_loc.y == goal_loc.y - 1) && (reverse == 0) && ((center_wl_sensor_data > 200 && (left_wl_sensor_data > 200 || right_wl_sensor_data > 200)) || (left_wl_sensor_data > 200 && right_wl_sensor_data > 200)))
-				reverseSensorValues();
-			else if(turn == 1 && left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50) {
-				turn = 1;
+			if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50) { // WBW & BWB
+				forward();
+				velocity(200,200);
 			}
-			else if(turn == 1)
-				reverse = 1;
-
 			if(left_wl_sensor_data < 50 && right_wl_sensor_data > 200) {     // WWB & WBB
 				right();
-				velocity(100,100);
+				velocity(10,10);
 			}
 			else if(left_wl_sensor_data > 200 && right_wl_sensor_data < 50) {    // BWW & BBW
 				left();
-				velocity(100,100);
+				velocity(10,10);
 			}
 			else if(left_wl_sensor_data > 200 && center_wl_sensor_data > 200 && right_wl_sensor_data > 200) {  // BBB
 				printf("Intersection Reached %d\n", i+1);
 				velocity(200,200);
-				_delay_ms(350);
+				_delay_ms(130);
 				stop();
 				if(dir_flag == 'n') curr_loc.y++;
 				else if(dir_flag == 's') curr_loc.y--;
@@ -164,19 +131,19 @@ void forward_wls(unsigned char node)
 			else if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50){  // WWW
 				if(t % 4 == 0){
 					left();
-					velocity(48,50);
+					velocity(10,10);
 				}
 				else if(t % 4 == 1){
 					right();
-					velocity(50,48);
+					velocity(10,10);
 				}
 				else if(t % 4 == 2){
 					right();
-					velocity(50,48);
+					velocity(10,10);
 				}
 				else {
 					left();
-					velocity(48,50);
+					velocity(10,10);
 				}
 				_delay_ms(s * 10);
 				if(t % 4 == 3)
@@ -202,10 +169,12 @@ void forward_wls(unsigned char node)
 */
 void left_turn_wls(void)
 {
+	int timer = 0;
 	left();
-	_delay_ms(450);
-	velocity(30,30);
+	//_delay_ms(100);
+	velocity(20,20);
 	while(1) {
+		timer++;
 		readSensor();
 		if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
@@ -214,6 +183,7 @@ void left_turn_wls(void)
 		}
 		_delay_ms(10);
 	}
+	printf("timer = %d\n", timer);
 	if(dir_flag == 'n') dir_flag = 'w';
 	else if(dir_flag == 'w') dir_flag = 's';
 	else if(dir_flag == 's') dir_flag = 'e';
@@ -232,10 +202,12 @@ void left_turn_wls(void)
 */
 void right_turn_wls(void)
 {
+	int timer = 0;
 	right();
-	_delay_ms(450);
-	velocity(30,30);
+	//_delay_ms(100);
+	velocity(20,20);
 	while(1) {
+		timer++;
 		readSensor();
 		if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
@@ -248,6 +220,7 @@ void right_turn_wls(void)
 	else if(dir_flag == 'w') dir_flag = 'n';
 	else if(dir_flag == 's') dir_flag = 'w';
 	else dir_flag = 's';
+	printf("Timer = %d\n", timer);
 }
 
 /**
@@ -255,7 +228,7 @@ void right_turn_wls(void)
  */
 void traverse_line_to_goal(void)
 {
-	unsigned char step = 0;
+/*	unsigned char step = 0;
 	forward_wls(1);
 	curr_loc.y--;
 	left_turn_wls();
@@ -361,11 +334,15 @@ void traverse_line_to_goal(void)
 			}
 		}
 	}
+*/
+	forward_wls(1);
 
-//	forward_wls(1);
-//	left_turn_wls();
-//	forward_wls(1);
-//	right_turn_wls();
+	left_turn_wls();
+
+
+	forward_wls(2);
+	right_turn_wls();
+	_delay_ms(1000000);
 //	forward_wls(4);
 //	forward_wls(1);
 //	right_turn_wls();
@@ -373,3 +350,4 @@ void traverse_line_to_goal(void)
 //	left_turn_wls();
 //	forward_wls(1);
 }
+
