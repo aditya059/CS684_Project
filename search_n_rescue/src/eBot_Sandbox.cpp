@@ -5,13 +5,10 @@
  * Author: TAs of CS 684 Spring 2020
  */
 
-
 //---------------------------------- INCLUDES -----------------------------------
-
 
 #include "eBot_Sandbox.h"
 #include <stdlib.h>
-
 
 //------------------------------ GLOBAL VARIABLES -------------------------------
 
@@ -21,9 +18,7 @@ unsigned char left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data;
 // To store 8-bit data of 5th IR proximity sensors
 unsigned char ir_prox_5_sensor_data;
 
-
 //---------------------------------- FUNCTIONS ----------------------------------
-
 
 /**
  * @brief      Executes the logic to achieve the aim of Lab 3
@@ -36,19 +31,19 @@ void send_sensor_data(void)
 	{
 		// get the ADC converted data of three white line sensors and
 		// 5th IR Proximity sensor sensor from their appropriate channel numbers
-		left_wl_sensor_data		= convert_analog_channel_data( left_wl_sensor_channel );
-		center_wl_sensor_data	= convert_analog_channel_data( center_wl_sensor_channel );
-		right_wl_sensor_data	= convert_analog_channel_data( right_wl_sensor_channel );
+		left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
+		center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
+		right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
 
-		ir_prox_5_sensor_data	= convert_analog_channel_data( ir_prox_5_sensor_channel );
+		ir_prox_5_sensor_data = convert_analog_channel_data(ir_prox_5_sensor_channel);
 
-		printf("LCR : %d %d %d" , left_wl_sensor_data , center_wl_sensor_data , right_wl_sensor_data);
+		printf("LCR : %d %d %d", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 
 		// return_code = print_ir_prox_5_data(ir_prox_5_sensor_data);
 
 		return_code = print_color_sensor_data();
 
-		if ( return_code == 0 )
+		if (return_code == 0)
 		{
 			break;
 		}
@@ -57,21 +52,18 @@ void send_sensor_data(void)
 	}
 }
 
-
-
 // To store the eBot's current and Goal location
 typedef struct
 {
 	int x, y;
-}tuple;
+} tuple;
 
-tuple curr_loc = {0,4}, med_loc = {5,9};
+tuple curr_loc = {0, 4}, med_loc = {5, 9}, goal_loc;
 
 // To store the direction in which eBot is currently facing
 char dir_flag = 'n';
 
 //---------------------------------- FUNCTIONS ----------------------------------
-
 
 /*
 *
@@ -98,55 +90,69 @@ void forward_wls(unsigned char node)
 	unsigned char s = 1;
 	for (int i = 0; i < node; i++)
 	{
-		while(1) {
+		while (1)
+		{
 
 			readSensor();
 
-			if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50) { // WBW
+			if (left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
+			{ // WBW
 				forward();
-				velocity(200,200);
+				velocity(200, 200);
 			}
-			else if(left_wl_sensor_data < 50 && right_wl_sensor_data > 200) {     // WWB & WBB
+			else if (left_wl_sensor_data < 50 && right_wl_sensor_data > 200)
+			{ // WWB & WBB
 				right();
-				velocity(20,20);
+				velocity(20, 20);
 			}
-			else if(left_wl_sensor_data > 200 && right_wl_sensor_data < 50) {    // BWW & BBW
+			else if (left_wl_sensor_data > 200 && right_wl_sensor_data < 50)
+			{ // BWW & BBW
 				left();
-				velocity(20,20);
+				velocity(20, 20);
 			}
-			else if(left_wl_sensor_data > 200 && center_wl_sensor_data > 200 && right_wl_sensor_data > 200) {  // BBB
-				printf("Intersection Reached %d\n", i+1);
+			else if (left_wl_sensor_data > 200 && center_wl_sensor_data > 200 && right_wl_sensor_data > 200)
+			{ // BBB
+				printf("Intersection Reached %d\n", i + 1);
 				forward();
-				velocity(200,200);
+				velocity(200, 200);
 				_delay_ms(110);
 				stop();
-				if(dir_flag == 'n') curr_loc.x++;
-				else if(dir_flag == 's') curr_loc.x--;
-				else if(dir_flag == 'w') curr_loc.y--;
-				else curr_loc.y++;
+				if (dir_flag == 'n')
+					curr_loc.x++;
+				else if (dir_flag == 's')
+					curr_loc.x--;
+				else if (dir_flag == 'w')
+					curr_loc.y--;
+				else
+					curr_loc.y++;
 				printf("Current: (%d, %d)\n", curr_loc.x, curr_loc.y);
 				printf("Goal: (%d, %d)\n", med_loc.x, med_loc.y);
 				break;
 			}
-			else /*if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50)*/{  // WWW
-				if(t % 4 == 0){
+			else /*if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50)*/
+			{	 // WWW
+				if (t % 4 == 0)
+				{
 					left();
-					velocity(20,20);
+					velocity(20, 20);
 				}
-				else if(t % 4 == 1){
+				else if (t % 4 == 1)
+				{
 					right();
-					velocity(20,20);
+					velocity(20, 20);
 				}
-				else if(t % 4 == 2){
+				else if (t % 4 == 2)
+				{
 					right();
-					velocity(20,20);
+					velocity(20, 20);
 				}
-				else {
+				else
+				{
 					left();
-					velocity(20,20);
+					velocity(20, 20);
 				}
 				_delay_ms(s * 5);
-				if(t % 4 == 3)
+				if (t % 4 == 3)
 					s *= 2;
 				t++;
 				continue;
@@ -173,28 +179,32 @@ void left_turn_wls(void)
 	int timer = 0;
 	left();
 	_delay_ms(100);
-	velocity(20,20);
-	while(1) {
+	velocity(20, 20);
+	while (1)
+	{
 		timer++;
 		readSensor();
-		if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
+		if (left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
-			velocity(0,0);
+			velocity(0, 0);
 			break;
 		}
 		_delay_ms(10);
 	}
 	printf("timer = %d\n", timer);
-	for(int i = 0; i <= timer / 180; i++) {
-		if(dir_flag == 'n') dir_flag = 'w';
-		else if(dir_flag == 'w') dir_flag = 's';
-		else if(dir_flag == 's') dir_flag = 'e';
-		else dir_flag = 'n';
+	for (int i = 0; i <= timer / 180; i++)
+	{
+		if (dir_flag == 'n')
+			dir_flag = 'w';
+		else if (dir_flag == 'w')
+			dir_flag = 's';
+		else if (dir_flag == 's')
+			dir_flag = 'e';
+		else
+			dir_flag = 'n';
 		printf("Direction = %c\n", dir_flag);
 	}
-
 }
-
 
 /*
 *
@@ -211,26 +221,31 @@ void right_turn_wls(void)
 	int timer = 0;
 	right();
 	_delay_ms(100);
-	velocity(20,20);
-	while(1) {
+	velocity(20, 20);
+	while (1)
+	{
 		timer++;
 		readSensor();
-		if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
+		if (left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
-			velocity(0,0);
+			velocity(0, 0);
 			break;
 		}
 		_delay_ms(10);
 	}
 	printf("Timer = %d\n", timer);
-	for(int i = 0; i <= timer / 180; i++) {
-		if(dir_flag == 'n') dir_flag = 'e';
-		else if(dir_flag == 'w') dir_flag = 'n';
-		else if(dir_flag == 's') dir_flag = 'w';
-		else dir_flag = 's';
+	for (int i = 0; i <= timer / 180; i++)
+	{
+		if (dir_flag == 'n')
+			dir_flag = 'e';
+		else if (dir_flag == 'w')
+			dir_flag = 'n';
+		else if (dir_flag == 's')
+			dir_flag = 'w';
+		else
+			dir_flag = 's';
 		printf("Direction = %c\n", dir_flag);
 	}
-
 }
 
 /**
@@ -238,7 +253,7 @@ void right_turn_wls(void)
  */
 void traverse_line_to_goal(void)
 {
-/*	unsigned char step = 0;
+	/*	unsigned char step = 0;
 	forward_wls(1);
 	curr_loc.y--;
 	left_turn_wls();
@@ -359,34 +374,31 @@ void traverse_line_to_goal(void)
 	forward_wls(1);
 	_delay_ms(1000000);
 
-
 	//forward_wls(4);
 
-//	forward_wls(1);
-//	right_turn_wls();
-//	forward_wls(1);
-//	left_turn_wls();
-//	forward_wls(1);
+	//	forward_wls(1);
+	//	right_turn_wls();
+	//	forward_wls(1);
+	//	left_turn_wls();
+	//	forward_wls(1);
 }
 
-
-
-
-tuple get_cords(unsigned char plot_no){
-	unsigned char plots_x[] = {8,6,4,2}, plots_y[] = {7,1,3,5};
+tuple get_cords(unsigned char plot_no)
+{
+	unsigned char plots_x[] = {8, 6, 4, 2}, plots_y[] = {7, 1, 3, 5};
 	tuple cords;
 	int x;
-	x = (plot_no - 1)/4;
+	x = (plot_no - 1) / 4;
 	cords.x = plots_x[x];
 	cords.y = plots_y[(plot_no % 4)];
 	return cords;
 }
 
-
-
-void traverse(void) {
+void traverse(void)
+{
 	tuple cords;
-	for(int i = 1; i <= 16; i++) {
+	for (int i = 1; i <= 16; i++)
+	{
 		cords = get_cords(i);
 		printf("Plot %d : (%d, %d)\n", i, cords.x, cords.y);
 		printf("Left Cords: (%d, %d)\n", cords.x, cords.y - 1);
@@ -399,47 +411,68 @@ void traverse(void) {
 		tuple bottomCords = {cords.x - 1, cords.y};
 
 		int distToLeftCord = (curr_loc.x - leftCords.x) + (curr_loc.y - leftCords.y);
-		int distToRightCord = (curr_loc.x - rightCords.x) + (curr_loc.y -rightCords.y);
+		int distToRightCord = (curr_loc.x - rightCords.x) + (curr_loc.y - rightCords.y);
 		int distToTopCord = (curr_loc.x - topCords.x) + (curr_loc.y - topCords.y);
 		int distToBottomCord = (curr_loc.x - bottomCords.x) + (curr_loc.y - bottomCords.y);
 
 		int minDist1, minDist2, maxDist1, maxDist2;
 		tuple minCord1, minCord2, maxCord1, maxCord2;
 		char minNode1, minNode2, maxNode1, maxNode2;
-		if(distToLeftCord <= distToRightCord) {
-			minDist1 = distToLeftCord;
-			minCord1 = leftCords;
-			minNode1 = 'L';
-			maxDist1 = distToRightCord;
-			maxCord1 = rightCords;
-			maxNode1 = 'R';
+
+		if (distToTopCord <= distToBottomCord)
+		{
+			minDist1 = distToTopCord;
+			minCord1 = topCords;
+			minNode1 = 'T';
+			maxDist1 = distToBottomCord;
+			maxCord1 = bottomCords;
+			maxNode1 = 'B';
 		}
-		else {
-			minDist1 = distToRightCord;
-			minCord1 = rightCords;
-			minNode1 = 'R';
-			maxDist1 = distToLeftCord;
-			maxCord1 = leftCords;
-			maxNode1 = 'L';
+		else
+		{
+			minDist1 = distToBottomCord;
+			minCord1 = bottomCords;
+			minNode1 = 'B';
+			maxDist1 = distToTopCord;
+			maxCord1 = topCords;
+			maxNode1 = 'T';
 		}
 
-		if(distToTopCord <= distToBottomCord) {
-			minDist2 = distToTopCord;
-			minCord2 = topCords;
-			minNode2 = 'T';
-			maxDist2 = distToBottomCord;
-			maxCord2 = bottomCords;
-			maxNode2 = 'B';
+		if (distToLeftCord <= distToRightCord)
+		{
+			minDist2 = distToLeftCord;
+			minCord2 = leftCords;
+			minNode2 = 'L';
+			maxDist2 = distToRightCord;
+			maxCord2 = rightCords;
+			maxNode2 = 'R';
 		}
-		else {
-			minDist2 = distToBottomCord;
-			minCord2 = bottomCords;
-			minNode2 = 'B';
-			maxDist2 = distToTopCord;
-			maxCord2 = topCords;
-			maxNode2 = 'T';
+		else
+		{
+			minDist2 = distToRightCord;
+			minCord2 = rightCords;
+			minNode2 = 'R';
+			maxDist2 = distToLeftCord;
+			maxCord2 = leftCords;
+			maxNode2 = 'L';
 		}
+
+		goal_loc = {minCord1.x, minCord2.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {minCord1.x, maxCord2.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {maxCord1.x, minCord2.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {maxCord1.x, maxCord2.y};
+		if (traverse_line_to_goal())
+			continue;
 	}
+	goal_loc = med_loc;
+	traverse_line_to_goal();
 }
-
-
