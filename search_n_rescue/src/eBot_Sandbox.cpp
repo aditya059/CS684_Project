@@ -100,8 +100,6 @@ void forward_wls(unsigned char node)
 	{
 		while(1) {
 
-
-
 			readSensor();
 
 			if(left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50) { // WBW
@@ -110,11 +108,11 @@ void forward_wls(unsigned char node)
 			}
 			else if(left_wl_sensor_data < 50 && right_wl_sensor_data > 200) {     // WWB & WBB
 				right();
-				velocity(10,10);
+				velocity(20,20);
 			}
 			else if(left_wl_sensor_data > 200 && right_wl_sensor_data < 50) {    // BWW & BBW
 				left();
-				velocity(10,10);
+				velocity(20,20);
 			}
 			else if(left_wl_sensor_data > 200 && center_wl_sensor_data > 200 && right_wl_sensor_data > 200) {  // BBB
 				printf("Intersection Reached %d\n", i+1);
@@ -133,23 +131,23 @@ void forward_wls(unsigned char node)
 			else /*if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50)*/{  // WWW
 				if(t % 4 == 0){
 					left();
-					velocity(10,10);
+					velocity(20,20);
 				}
 				else if(t % 4 == 1){
 					right();
-					velocity(10,10);
+					velocity(20,20);
 				}
 				else if(t % 4 == 2){
 					right();
-					velocity(10,10);
+					velocity(20,20);
 				}
 				else {
 					left();
-					velocity(10,10);
+					velocity(20,20);
 				}
-				_delay_ms(s * 10);
+				_delay_ms(s * 5);
 				if(t % 4 == 3)
-					s *= 4;
+					s *= 2;
 				t++;
 				continue;
 			}
