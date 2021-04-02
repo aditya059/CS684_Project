@@ -23,7 +23,8 @@ int main(int argc, char* argv[])
 		#endif
 
 		//send_sensor_data();
-		traverse_line_to_goal();
+		//traverse_line_to_goal();
+		pathPlanning();
 
 		#ifdef NON_MATLAB_PARSING
 			clean_up();

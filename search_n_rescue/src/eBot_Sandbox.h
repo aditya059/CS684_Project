@@ -23,7 +23,8 @@
 //---------------------------------- FUNCTIONS ----------------------------------
 
 //void send_sensor_data(void);
-void traverse_line_to_goal(void);
+//void traverse_line_to_goal(void);
+void pathPlanning(void);
 
 
 #endif /* EBOT_SANDBOX_H_ */

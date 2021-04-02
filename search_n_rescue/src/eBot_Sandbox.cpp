@@ -81,7 +81,7 @@ void readSensor()
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	print_color_sensor_data();
+	//print_color_sensor_data();
 	printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -314,10 +314,10 @@ void traverse_line_to_goal(void)
 				forward_wls(1);
 				traverse_line_to_goal();
 				while(dir_flag != 'w') {
-					left_turn_wls();
+					right_turn_wls();
 				}
 				forward_wls(2);
-				right_turn_wls();
+				left_turn_wls();
 			}
 			else {
 				right_turn_wls();
@@ -332,7 +332,7 @@ void traverse_line_to_goal(void)
 				forward_wls(1);
 				traverse_line_to_goal();
 				while(dir_flag != 'e') {
-					right_turn_wls();
+					left_turn_wls();
 				}
 				forward_wls(2);
 				right_turn_wls();
@@ -379,6 +379,8 @@ void traverse_line_to_goal(void)
 				left_turn_wls();
 			}
 		}
+
+
 		forward_wls(1);
 		// Add plot checking logic here
 		forward_wls(1);
@@ -387,6 +389,8 @@ void traverse_line_to_goal(void)
 			left_turn_wls();
 		}
 		forward_wls(2);
+
+
 		if (goal_loc.x > curr_loc.x) {
 			left_turn_wls();
 			if (dir_flag == 's') {
@@ -406,6 +410,91 @@ void traverse_line_to_goal(void)
 		}
 		else if(goal_loc.x < curr_loc.x) {
 			right_turn_wls();
+			if (dir_flag == 'n') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 's') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+	}
+
+
+	else if(dir_flag == 'w') {
+
+		if (goal_loc.x < curr_loc.x) {
+			left_turn_wls();
+			if (dir_flag == 's') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'n') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		else if(goal_loc.x > curr_loc.x) {
+			right_turn_wls();
+			if (dir_flag == 'n') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 's') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+
+
+		forward_wls(1);
+		// Add plot checking logic here
+		forward_wls(1);
+		traverse_line_to_goal();
+		while(dir_flag != 'e') {
+			left_turn_wls();
+		}
+		forward_wls(2);
+
+
+		if (goal_loc.x < curr_loc.x) {
+			left_turn_wls();
+			if (dir_flag == 'n') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 's') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		else if(goal_loc.x > curr_loc.x) {
+			right_turn_wls();
 			if (dir_flag == 's') {
 				forward_wls(1);
 				// Add plot checking logic here
@@ -421,12 +510,94 @@ void traverse_line_to_goal(void)
 				left_turn_wls();
 			}
 		}
-	}
-	else if(dir_flag == 'w') {
+
 
 	}
 	else {
 
+		// For trying left
+		if (goal_loc.y > curr_loc.y) {
+			left_turn_wls();
+			if (dir_flag == 'e') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'w') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		// For trying right
+		else if(goal_loc.y < curr_loc.y) {
+			right_turn_wls();
+			if (dir_flag == 'w') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'e') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+
+		// For going forward
+		forward_wls(1);
+		// Add plot checking logic here
+		forward_wls(1);
+		traverse_line_to_goal();
+		while(dir_flag != 'n') {
+			left_turn_wls();
+		}
+		forward_wls(2);
+
+		// For trying right side if left was tried earlier
+		if (goal_loc.y > curr_loc.y) {
+			left_turn_wls();
+			if (dir_flag == 'w') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'e') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		// For trying left side if right was tried earlier
+		else if(goal_loc.y < curr_loc.y) {
+			right_turn_wls();
+			if (dir_flag == 'e') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'w') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
 	}
 	/*unsigned char step = 0;
 	forward_wls(1);
@@ -575,100 +746,100 @@ tuple get_cords(unsigned char plot_no)
 void pathPlanning(void)
 {
 	forward_wls(1);
-	tuple cords;
-	for (int i = 1; i <= 16; i++)
-	{
-		cords = get_cords(i);
-		printf("Plot %d : (%d, %d)\n", i, cords.x, cords.y);
-		printf("Left Cords: (%d, %d)\n", cords.x, cords.y - 1);
-		printf("Right Cords: (%d, %d)\n", cords.x, cords.y + 1);
-		printf("Top Cords: (%d, %d)\n", cords.x + 1, cords.y);
-		printf("Bottom Cords: (%d, %d)\n\n", cords.x - 1, cords.y);
-		tuple leftCords = {cords.x, cords.y - 1};
-		tuple rightCords = {cords.x, cords.y + 1};
-		tuple topCords = {cords.x + 1, cords.y};
-		tuple bottomCords = {cords.x - 1, cords.y};
-
-		int distToLeftCord = (curr_loc.x - leftCords.x) + (curr_loc.y - leftCords.y);
-		int distToRightCord = (curr_loc.x - rightCords.x) + (curr_loc.y - rightCords.y);
-		int distToTopCord = (curr_loc.x - topCords.x) + (curr_loc.y - topCords.y);
-		int distToBottomCord = (curr_loc.x - bottomCords.x) + (curr_loc.y - bottomCords.y);
-
-		int minDist1, minDist2, maxDist1, maxDist2;
-		tuple minCord1, minCord2, maxCord1, maxCord2;
-		char minNode1, minNode2, maxNode1, maxNode2;
-
-		if (distToTopCord <= distToBottomCord)
-		{
-			minDist1 = distToTopCord;
-			minCord1 = topCords;
-			minNode1 = 'T';
-			maxDist1 = distToBottomCord;
-			maxCord1 = bottomCords;
-			maxNode1 = 'B';
-		}
-		else
-		{
-			minDist1 = distToBottomCord;
-			minCord1 = bottomCords;
-			minNode1 = 'B';
-			maxDist1 = distToTopCord;
-			maxCord1 = topCords;
-			maxNode1 = 'T';
-		}
-
-		if (distToLeftCord <= distToRightCord)
-		{
-			minDist2 = distToLeftCord;
-			minCord2 = leftCords;
-			minNode2 = 'L';
-			maxDist2 = distToRightCord;
-			maxCord2 = rightCords;
-			maxNode2 = 'R';
-		}
-		else
-		{
-			minDist2 = distToRightCord;
-			minCord2 = rightCords;
-			minNode2 = 'R';
-			maxDist2 = distToLeftCord;
-			maxCord2 = leftCords;
-			maxNode2 = 'L';
-		}
-
-		/*goal_loc = {minCord1.x, minCord1.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {minCord2.x, minCord2.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {maxCord1.x, maxCord1.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {maxCord2.x, maxCord2.y};
-		if (traverse_line_to_goal())
-			continue;
-		*/
-
-		/*goal_loc = {minCord1.x, minCord2.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {minCord1.x, maxCord2.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {maxCord1.x, minCord2.y};
-		if (traverse_line_to_goal())
-			continue;
-
-		goal_loc = {maxCord1.x, maxCord2.y};
-		if (traverse_line_to_goal())
-			continue;*/
-	}
+//	tuple cords;
+//	for (int i = 1; i <= 16; i++)
+//	{
+//		cords = get_cords(i);
+//		printf("Plot %d : (%d, %d)\n", i, cords.x, cords.y);
+//		printf("Left Cords: (%d, %d)\n", cords.x, cords.y - 1);
+//		printf("Right Cords: (%d, %d)\n", cords.x, cords.y + 1);
+//		printf("Top Cords: (%d, %d)\n", cords.x + 1, cords.y);
+//		printf("Bottom Cords: (%d, %d)\n\n", cords.x - 1, cords.y);
+//		tuple leftCords = {cords.x, cords.y - 1};
+//		tuple rightCords = {cords.x, cords.y + 1};
+//		tuple topCords = {cords.x + 1, cords.y};
+//		tuple bottomCords = {cords.x - 1, cords.y};
+//
+//		int distToLeftCord = (curr_loc.x - leftCords.x) + (curr_loc.y - leftCords.y);
+//		int distToRightCord = (curr_loc.x - rightCords.x) + (curr_loc.y - rightCords.y);
+//		int distToTopCord = (curr_loc.x - topCords.x) + (curr_loc.y - topCords.y);
+//		int distToBottomCord = (curr_loc.x - bottomCords.x) + (curr_loc.y - bottomCords.y);
+//
+//		int minDist1, minDist2, maxDist1, maxDist2;
+//		tuple minCord1, minCord2, maxCord1, maxCord2;
+//		char minNode1, minNode2, maxNode1, maxNode2;
+//
+//		if (distToTopCord <= distToBottomCord)
+//		{
+//			minDist1 = distToTopCord;
+//			minCord1 = topCords;
+//			minNode1 = 'T';
+//			maxDist1 = distToBottomCord;
+//			maxCord1 = bottomCords;
+//			maxNode1 = 'B';
+//		}
+//		else
+//		{
+//			minDist1 = distToBottomCord;
+//			minCord1 = bottomCords;
+//			minNode1 = 'B';
+//			maxDist1 = distToTopCord;
+//			maxCord1 = topCords;
+//			maxNode1 = 'T';
+//		}
+//
+//		if (distToLeftCord <= distToRightCord)
+//		{
+//			minDist2 = distToLeftCord;
+//			minCord2 = leftCords;
+//			minNode2 = 'L';
+//			maxDist2 = distToRightCord;
+//			maxCord2 = rightCords;
+//			maxNode2 = 'R';
+//		}
+//		else
+//		{
+//			minDist2 = distToRightCord;
+//			minCord2 = rightCords;
+//			minNode2 = 'R';
+//			maxDist2 = distToLeftCord;
+//			maxCord2 = leftCords;
+//			maxNode2 = 'L';
+//		}
+//
+//		/*goal_loc = {minCord1.x, minCord1.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {minCord2.x, minCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {maxCord1.x, maxCord1.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {maxCord2.x, maxCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//		*/
+//
+//		/*goal_loc = {minCord1.x, minCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {minCord1.x, maxCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {maxCord1.x, minCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;
+//
+//		goal_loc = {maxCord1.x, maxCord2.y};
+//		if (traverse_line_to_goal())
+//			continue;*/
+//	}
 	goal_loc = med_loc;
 	traverse_line_to_goal();
 }
