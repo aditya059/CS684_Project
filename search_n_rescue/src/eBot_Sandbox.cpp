@@ -81,6 +81,7 @@ void readSensor()
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
+	print_color_sensor_data();
 	printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -248,14 +249,189 @@ void right_turn_wls(void)
 	}
 }
 
+
+
 /**
  * @brief      Executes the logic to achieve the aim of Lab 4
  */
 void traverse_line_to_goal(void)
 {
-	/*	unsigned char step = 0;
+
+	if(dir_flag == 'n') {
+		// For trying left
+		if (goal_loc.y < curr_loc.y) {
+			left_turn_wls();
+			if (dir_flag == 'w') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'e') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		// For trying right
+		else if(goal_loc.y > curr_loc.y) {
+			right_turn_wls();
+			if (dir_flag == 'e') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'w') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+
+		// For going forward
+		forward_wls(1);
+		// Add plot checking logic here
+		forward_wls(1);
+		traverse_line_to_goal();
+		while(dir_flag != 's') {
+			left_turn_wls();
+		}
+		forward_wls(2);
+
+		// For trying right side if left was tried earlier
+		if (goal_loc.y < curr_loc.y) {
+			left_turn_wls();
+			if (dir_flag == 'e') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'w') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		// For trying left side if right was tried earlier
+		else if(goal_loc.y > curr_loc.y) {
+			right_turn_wls();
+			if (dir_flag == 'w') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'e') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+	}
+
+
+	else if(dir_flag == 'e') {
+		if (goal_loc.x > curr_loc.x) {
+			left_turn_wls();
+			if (dir_flag == 'n') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 's') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		else if(goal_loc.x < curr_loc.x) {
+			right_turn_wls();
+			if (dir_flag == 's') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'n') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+		forward_wls(1);
+		// Add plot checking logic here
+		forward_wls(1);
+		traverse_line_to_goal();
+		while(dir_flag != 'w') {
+			left_turn_wls();
+		}
+		forward_wls(2);
+		if (goal_loc.x > curr_loc.x) {
+			left_turn_wls();
+			if (dir_flag == 's') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'n') {
+					right_turn_wls();
+				}
+				forward_wls(2);
+				left_turn_wls();
+			}
+			else {
+				right_turn_wls();
+			}
+		}
+		else if(goal_loc.x < curr_loc.x) {
+			right_turn_wls();
+			if (dir_flag == 's') {
+				forward_wls(1);
+				// Add plot checking logic here
+				forward_wls(1);
+				traverse_line_to_goal();
+				while(dir_flag != 'n') {
+					left_turn_wls();
+				}
+				forward_wls(2);
+				right_turn_wls();
+			}
+			else {
+				left_turn_wls();
+			}
+		}
+	}
+	else if(dir_flag == 'w') {
+
+	}
+	else {
+
+	}
+	/*unsigned char step = 0;
 	forward_wls(1);
-	curr_loc.y--;
+	//curr_loc.y--;
+	curr_loc.x--;
 	left_turn_wls();
 	ir_prox_5_sensor_data = convert_analog_channel_data(ir_prox_5_sensor_channel);
 	if(ir_prox_5_sensor_data == 200){
@@ -358,21 +534,23 @@ void traverse_line_to_goal(void)
 				right_turn_wls();
 			}
 		}
-	}
-*/
-	forward_wls(5);
-	left_turn_wls();
-	forward_wls(2);
-	right_turn_wls();
-	forward_wls(4);
-	left_turn_wls();
-	forward_wls(2);
-	left_turn_wls();
-	_delay_ms(1000);
-	//forward_wls(2);
-	right_turn_wls();
-	forward_wls(1);
-	_delay_ms(1000000);
+		return true;
+	}*/
+
+
+//	forward_wls(5);
+//	left_turn_wls();
+//	forward_wls(2);
+//	right_turn_wls();
+//	forward_wls(4);
+//	left_turn_wls();
+//	forward_wls(2);
+//	left_turn_wls();
+//	_delay_ms(1000);
+//	//forward_wls(2);
+//	right_turn_wls();
+//	forward_wls(1);
+//	_delay_ms(1000000);
 
 	//forward_wls(4);
 
@@ -394,8 +572,9 @@ tuple get_cords(unsigned char plot_no)
 	return cords;
 }
 
-void traverse(void)
+void pathPlanning(void)
 {
+	forward_wls(1);
 	tuple cords;
 	for (int i = 1; i <= 16; i++)
 	{
@@ -457,7 +636,24 @@ void traverse(void)
 			maxNode2 = 'L';
 		}
 
-		goal_loc = {minCord1.x, minCord2.y};
+		/*goal_loc = {minCord1.x, minCord1.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {minCord2.x, minCord2.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {maxCord1.x, maxCord1.y};
+		if (traverse_line_to_goal())
+			continue;
+
+		goal_loc = {maxCord2.x, maxCord2.y};
+		if (traverse_line_to_goal())
+			continue;
+		*/
+
+		/*goal_loc = {minCord1.x, minCord2.y};
 		if (traverse_line_to_goal())
 			continue;
 
@@ -471,7 +667,7 @@ void traverse(void)
 
 		goal_loc = {maxCord1.x, maxCord2.y};
 		if (traverse_line_to_goal())
-			continue;
+			continue;*/
 	}
 	goal_loc = med_loc;
 	traverse_line_to_goal();
