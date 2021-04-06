@@ -8,10 +8,11 @@
 //---------------------------------- INCLUDES -----------------------------------
 
 #include "eBot_Sandbox.h"
-#include <stdlib.h>
 #include <bits/stdc++.h>
 
-#define N 9
+#define SIZE 9
+#define NO_OF_PLOTS 16
+#define NO_OF_MID_NODE_PER_PLOT 4
 
 using namespace std;
 
@@ -27,12 +28,10 @@ typedef struct
 	int x, y;
 } Point;
 
-
-
 // To store the direction in which eBot is currently facing
 char dir_flag = 'n';
 
-bool medical_camp[N][N];
+char medical_camp_map[SIZE][SIZE];
 
 Point curr_loc = {9, 4}, med_loc = {4, 8};
 
@@ -60,7 +59,6 @@ void readSensor()
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	//print_color_sensor_data();
 	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -97,7 +95,7 @@ bool forward_wls(unsigned char node)
 				printf("Intersection Reached %d\n", i + 1);
 				forward();
 				velocity(200, 200);
-				_delay_ms(110);
+				_delay_ms(130);
 				stop();
 				if (dir_flag == 'n')
 					curr_loc.x--;
@@ -238,15 +236,9 @@ void right_turn_wls(void)
 bool turn_west(void) {           // turn west if possible and return true, otherwise return false
 	if(dir_flag == 'n') {
 		left_turn_wls();
-		if(dir_flag != 'w') {
-			right_turn_wls();
-		}
 	}
 	else if(dir_flag == 's') {
 		right_turn_wls();
-		if(dir_flag != 'w') {
-			left_turn_wls();
-		}
 	}
 	else if(dir_flag == 'e') {
 		left_turn_wls();
@@ -265,15 +257,11 @@ bool turn_west(void) {           // turn west if possible and return true, other
 bool turn_east(void) {		// turn east if possible and return true, otherwise return false
 	if(dir_flag == 'n') {
 		right_turn_wls();
-		if(dir_flag != 'e') {
-			left_turn_wls();
-		}
+
 	}
 	else if(dir_flag == 's') {
 		left_turn_wls();
-		if(dir_flag != 'e') {
-			right_turn_wls();
-		}
+
 	}
 	else if(dir_flag == 'w') {
 		left_turn_wls();
@@ -292,15 +280,11 @@ bool turn_east(void) {		// turn east if possible and return true, otherwise retu
 bool turn_north(void) {		// turn north if possible and return true, otherwise return false
 	if(dir_flag == 'e') {
 		left_turn_wls();
-		if(dir_flag != 'n') {
-			right_turn_wls();
-		}
+
 	}
 	else if(dir_flag == 'w') {
 		right_turn_wls();
-		if(dir_flag != 'n') {
-			left_turn_wls();
-		}
+
 	}
 	else if(dir_flag == 's') {
 		left_turn_wls();
@@ -319,15 +303,9 @@ bool turn_north(void) {		// turn north if possible and return true, otherwise re
 bool turn_south(void) {		 // turn south if possible and return true, otherwise return false
 	if(dir_flag == 'e') {
 		right_turn_wls();
-		if(dir_flag != 's') {
-			left_turn_wls();
-		}
 	}
 	else if(dir_flag == 'w') {
 		left_turn_wls();
-		if(dir_flag != 's') {
-			right_turn_wls();
-		}
 	}
 	else if(dir_flag == 'n') {
 		left_turn_wls();
@@ -349,49 +327,100 @@ Point get_cords(unsigned char plot_no)
 	Point cords;
 	int x;
 	x = (plot_no - 1) / 4;
-	cords.x = N - plots_x[x];
+	cords.x = SIZE - plots_x[x];
 	cords.y = plots_y[(plot_no % 4)];
 	return cords;
 }
 
-void initialize_medical_camp(void) {
+void initialize_medical_camp_map(void) {
 
-	for(int i = 0; i < N; i++) {
-		for(int j = 0; j < N; j++) {
-			medical_camp[i][j] = 1;
+	for(int i = 0; i < SIZE; i++) {
+		for(int j = 0; j < SIZE; j++) {
+			medical_camp_map[i][j] = 1;
 		}
 	}
 
 	Point cords;
-	for (int i = 1; i <= 16; i++)
+	for (int i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		cords = get_cords(i);
-		medical_camp[cords.x][cords.y] = 0;
+		medical_camp_map[cords.x][cords.y] = 0;
+	}
+
+}
+
+void check_plot() {
+	if(dir_flag == 'n') {
+		if(curr_loc.y - 1 >= 0 && medical_camp_map[curr_loc.x][curr_loc.y - 1] == 0) {
+			medical_camp_map[curr_loc.x][curr_loc.y - 1] = read_color_sensor_data();
+		}
+		if(curr_loc.y + 1 < SIZE && medical_camp_map[curr_loc.x][curr_loc.y + 1] == 0) {
+			turn_south();
+			medical_camp_map[curr_loc.x][curr_loc.y + 1] = read_color_sensor_data();
+			turn_north();
+		}
+	}
+	if(dir_flag == 's') {
+		if(curr_loc.y + 1 < SIZE && medical_camp_map[curr_loc.x][curr_loc.y + 1] == 0) {
+			medical_camp_map[curr_loc.x][curr_loc.y + 1] = read_color_sensor_data();
+		}
+		if(curr_loc.y - 1 >= 0 && medical_camp_map[curr_loc.x][curr_loc.y - 1] == 0) {
+			turn_north();
+			medical_camp_map[curr_loc.x][curr_loc.y - 1] = read_color_sensor_data();
+			turn_south();
+		}
+	}
+	if(dir_flag == 'w') {
+		if(curr_loc.x + 1 < SIZE && medical_camp_map[curr_loc.x + 1][curr_loc.y] == 0) {
+			medical_camp_map[curr_loc.x + 1][curr_loc.y] = read_color_sensor_data();
+		}
+		if(curr_loc.x - 1 >= 0 && medical_camp_map[curr_loc.x - 1][curr_loc.y] == 0) {
+			turn_east();
+			medical_camp_map[curr_loc.x - 1][curr_loc.y] = read_color_sensor_data();
+			turn_west();
+		}
+	}
+	if(dir_flag == 'e') {
+		if(curr_loc.x - 1 >= 0 && medical_camp_map[curr_loc.x - 1][curr_loc.y] == 0) {
+			medical_camp_map[curr_loc.x - 1][curr_loc.y] = read_color_sensor_data();
+		}
+		if(curr_loc.x + 1 < SIZE && medical_camp_map[curr_loc.x + 1][curr_loc.y] == 0) {
+			turn_west();
+			medical_camp_map[curr_loc.x + 1][curr_loc.y] = read_color_sensor_data();
+			turn_east();
+		}
 	}
 }
 
+bool is_mid_node(Point &node) {
+	return ((node.x & 1) == 0 && (node.y & 1) == 1) || ((node.x & 1) == 1 && (node.y & 1) == 0);
+}
 
-bool move(Point source, Point destination) {
+bool move(Point &source, Point &destination) {
 
 	bool is_possible;
 
 	if(destination.y < source.y) {
-		is_possible = turn_west() && forward_wls(1);;
+		is_possible = turn_west() && forward_wls(1);
 	}
 	else if(destination.y > source.y) {
-		is_possible = turn_east() && forward_wls(1);;
+		is_possible = turn_east() && forward_wls(1);
 	}
 	else if(destination.x < source.x) {
-		is_possible = turn_north() && forward_wls(1);;
+		is_possible = turn_north() && forward_wls(1);
 	}
 	else {
-		is_possible = turn_south() && forward_wls(1);;
+		is_possible = turn_south() && forward_wls(1);
 	}
 
 	if(!is_possible) {
-		medical_camp[destination.x][destination.y] = 0;
+		medical_camp_map[destination.x][destination.y] = 0;
 		return false;
 	}
+
+	if(is_mid_node(destination))
+		check_plot();
+
 	return true;
 }
 
@@ -400,20 +429,21 @@ bool move(Point source, Point destination) {
  * @brief      Executes the logic to achieve the aim of Lab 4
  */
 
-char traverse_line_to_goal(Point source, Point destination) {
+char traverse_line_to_goal(Point &source, Point &destination) {
 
-	bool visited[N][N];
-	Point parent[N][N];
-	char found = 0;
+	bool visited[SIZE][SIZE];
+	Point parent[SIZE][SIZE];
+	unsigned char found = 0;
 
-	for(int i = 0; i < N; i++) {
-		for(int j = 0; j < N; j++) {
-			visited[i][j] = 0;
+	for(int i = 0; i < SIZE; i++) {
+		for(int j = 0; j < SIZE; j++) {
+			visited[i][j] = false;
 			parent[i][j] = {0, 0};
 		}
 	}
 
-	printf("Source = {%d, %d}, Destination = {%d, %d}\n", source.x, source.y, destination.x, destination.y);
+	printf("Source = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", source.x, source.y, destination.x, destination.y, dir_flag);
+	_delay_ms(5000);
 
 	queue<Point> Queue;
 	Queue.push(source);
@@ -429,28 +459,28 @@ char traverse_line_to_goal(Point source, Point destination) {
 		}
 
 		// Moving West
-		if(p.y - 1 >= 0 && medical_camp[p.x][p.y - 1] == 1 && visited[p.x][p.y - 1] == 0) {
+		if(p.y - 1 >= 0 && medical_camp_map[p.x][p.y - 1] == 1 && visited[p.x][p.y - 1] == 0) {
 			Queue.push({p.x, p.y - 1});
 			visited[p.x][p.y - 1] = 1;
 			parent[p.x][p.y - 1] = {p.x, p.y};
 		}
 
 		// Moving North
-		if(p.x - 1 >= 0 && medical_camp[p.x - 1][p.y] == 1 && visited[p.x - 1][p.y] == 0) {
+		if(p.x - 1 >= 0 && medical_camp_map[p.x - 1][p.y] == 1 && visited[p.x - 1][p.y] == 0) {
 			Queue.push({p.x - 1, p.y});
 			visited[p.x - 1][p.y] = 1;
 			parent[p.x - 1][p.y] = {p.x, p.y};
 		}
 
 		// Moving East
-		if(p.y + 1 < N && medical_camp[p.x][p.y + 1] == 1 && visited[p.x][p.y + 1] == 0) {
+		if(p.y + 1 < SIZE && medical_camp_map[p.x][p.y + 1] == 1 && visited[p.x][p.y + 1] == 0) {
 			Queue.push({p.x, p.y + 1});
 			visited[p.x][p.y + 1] = 1;
 			parent[p.x][p.y + 1] = {p.x, p.y};
 		}
 
 		// Moving South
-		if(p.x + 1 < N && medical_camp[p.x + 1][p.y] == 1 && visited[p.x + 1][p.y] == 0) {
+		if(p.x + 1 < SIZE && medical_camp_map[p.x + 1][p.y] == 1 && visited[p.x + 1][p.y] == 0) {
 			Queue.push({p.x + 1, p.y});
 			visited[p.x + 1][p.y] = 1;
 			parent[p.x + 1][p.y] = {p.x, p.y};
@@ -480,88 +510,45 @@ char traverse_line_to_goal(Point source, Point destination) {
 	return found;
 }
 
+bool traverse_to_node(Point &destination) {
+	while(traverse_line_to_goal(curr_loc, destination) == 2);
+	_delay_ms(5000);
+	if(curr_loc.x == destination.x && curr_loc.y == destination.y)
+		return true;
+	return false;
+}
+
 void path_planning(void)
 {
-	initialize_medical_camp();
+	initialize_medical_camp_map();
 
 	forward_wls(1);
 
 	Point cords;
-	for (int i = 1; i <= 16; i++)
+	for (int i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		cords = get_cords(i);
-//		printf("Plot %d : (%d, %d)\n", i, cords.x, cords.y);
-//		printf("Left Cords: (%d, %d)\n", cords.x, cords.y - 1);
-//		printf("Right Cords: (%d, %d)\n", cords.x, cords.y + 1);
-//		printf("Top Cords: (%d, %d)\n", cords.x - 1, cords.y);
-//		printf("Bottom Cords: (%d, %d)\n\n", cords.x + 1, cords.y);
-		Point leftCords = {cords.x, cords.y - 1};
-		Point rightCords = {cords.x, cords.y + 1};
-		Point topCords = {cords.x - 1, cords.y};
-		Point bottomCords = {cords.x + 1, cords.y};
+		if(medical_camp_map[cords.x][cords.y] == 0) {
 
-		while(traverse_line_to_goal(curr_loc, leftCords) == 2);
-		_delay_ms(1000);
-		if(curr_loc.x == leftCords.x && curr_loc.y == leftCords.y)
-			continue;
-		while(traverse_line_to_goal(curr_loc, rightCords) == 2);
-		_delay_ms(1000);
-		if(curr_loc.x == rightCords.x && curr_loc.y == rightCords.y)
-			continue;
-		while(traverse_line_to_goal(curr_loc, topCords) == 2);
-		_delay_ms(1000);
-		if(curr_loc.x == topCords.x && curr_loc.y == topCords.y)
-			continue;
-		while(traverse_line_to_goal(curr_loc, bottomCords) == 2);
-		_delay_ms(1000);
+			Point mid_node_cords[NO_OF_MID_NODE_PER_PLOT];
+			mid_node_cords[0] = {cords.x - 1, cords.y};             // Top mid node
+			mid_node_cords[1] = {cords.x, cords.y + 1};				// Right mid node
+			mid_node_cords[2] = {cords.x + 1, cords.y}; 			// Bottom mid node
+			mid_node_cords[3] = {cords.x, cords.y - 1};			 	// Left mid node
 
-
-//		int distToLeftCord = abs(curr_loc.x - leftCords.x) + abs(curr_loc.y - leftCords.y);
-//		int distToRightCord = abs(curr_loc.x - rightCords.x) + abs(curr_loc.y - rightCords.y);
-//		int distToTopCord = abs(curr_loc.x - topCords.x) + abs(curr_loc.y - topCords.y);
-//		int distToBottomCord = abs(curr_loc.x - bottomCords.x) + abs(curr_loc.y - bottomCords.y);
-//
-//		Point minCord1, minCord2, maxCord1, maxCord2;
-//
-//		if (distToTopCord <= distToBottomCord)
-//		{
-//			minCord1 = topCords;
-//			maxCord1 = bottomCords;
-//		}
-//		else
-//		{
-//			minCord1 = bottomCords;
-//			maxCord1 = topCords;
-//		}
-//
-//		if (distToLeftCord <= distToRightCord)
-//		{
-//			minCord2 = leftCords;
-//			maxCord2 = rightCords;
-//		}
-//		else
-//		{
-//			minCord2 = rightCords;
-//			maxCord2 = leftCords;
-//		}
-//
-//		while(traverse_line_to_goal(curr_loc, minCord1) == 2);
-//		_delay_ms(1000);
-//		if(curr_loc.x == minCord1.x && curr_loc.y == minCord1.y)
-//			continue;
-//		while(traverse_line_to_goal(curr_loc, minCord2) == 2);
-//		_delay_ms(1000);
-//		if(curr_loc.x == minCord2.x && curr_loc.y == minCord2.y)
-//			continue;
-//		while(traverse_line_to_goal(curr_loc, maxCord1) == 2);
-//		_delay_ms(1000);
-//		if(curr_loc.x == maxCord1.x && curr_loc.y == maxCord1.y)
-//			continue;
-//		while(traverse_line_to_goal(curr_loc, maxCord2) == 2);
-//		_delay_ms(1000);
-
+			for(int i = 0; i < NO_OF_MID_NODE_PER_PLOT; i++) {
+				if(traverse_to_node(mid_node_cords[i]))
+					break;
+			}
+		}
 	}
-	while(traverse_line_to_goal(curr_loc, med_loc) == 2);
+	traverse_to_node(med_loc);
 	turn_east();
 	forward_wls(1);
+
+	for(int i = 0; i < SIZE; i++) {
+		for(int j = 0; j < SIZE; j++) {
+			printf("%d %d %c\n", i, j, medical_camp_map[i][j]);
+		}
+	}
 }

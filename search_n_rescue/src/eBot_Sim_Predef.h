@@ -68,5 +68,7 @@ void stop_simulation(void);
 void exit_remote_api_server(void);
 void clean_up(void);
 
+char read_color_sensor_data(void);
+
 
 #endif /* EBOT_SIM_PREDEF_H_ */

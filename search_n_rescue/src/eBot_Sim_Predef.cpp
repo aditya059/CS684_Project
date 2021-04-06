@@ -306,6 +306,27 @@ int print_ir_prox_5_data(unsigned char front_prox_sensor_data)
 	return 0;
 }
 
+char read_color_sensor_data(void)
+{
+	char color = 'W';
+	filter_red();
+	if(color_sensor_pulse_count >= 5000)
+		color = 'R';
+	_delay_ms(500);
+
+	filter_green();
+	if(color_sensor_pulse_count >= 5000)
+		color = 'G';
+	_delay_ms(500);
+
+	filter_blue();
+	if(color_sensor_pulse_count >= 5000)
+		color = 'B';
+	_delay_ms(500);
+
+	return color;
+}
+
 int print_color_sensor_data(void)
 {
 	filter_red();
