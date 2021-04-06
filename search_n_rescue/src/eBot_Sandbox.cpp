@@ -14,6 +14,11 @@
 #define NO_OF_PLOTS 16
 #define NO_OF_MID_NODE_PER_PLOT 4
 
+#define WEST 'w'
+#define EAST 'e'
+#define NORTH 'n'
+#define SOUTH 's'
+
 using namespace std;
 
 //------------------------------ GLOBAL VARIABLES -------------------------------
@@ -29,9 +34,11 @@ typedef struct
 } Point;
 
 // To store the direction in which eBot is currently facing
-char dir_flag = 'n';
+char dir_flag = NORTH;
 
 char medical_camp_map[SIZE][SIZE];
+
+bool turned[SIZE][SIZE];
 
 Point curr_loc = {9, 4}, med_loc = {4, 8};
 
@@ -97,11 +104,11 @@ bool forward_wls(unsigned char node)
 				velocity(200, 200);
 				_delay_ms(130);
 				stop();
-				if (dir_flag == 'n')
+				if (dir_flag == NORTH)
 					curr_loc.x--;
-				else if (dir_flag == 's')
+				else if (dir_flag == SOUTH)
 					curr_loc.x++;
-				else if (dir_flag == 'w')
+				else if (dir_flag == WEST)
 					curr_loc.y--;
 				else
 					curr_loc.y++;
@@ -134,10 +141,6 @@ bool forward_wls(unsigned char node)
 				if (t % 4 == 3)
 					s *= 2;
 				t++;
-				if (s > 63) {
-					flag = false;
-					break;
-				}
 				continue;
 			}
 			t = 0;
@@ -178,14 +181,14 @@ void left_turn_wls(void)
 	printf("timer = %d\n", timer);
 	for (int i = 0; i <= timer / 180; i++)
 	{
-		if (dir_flag == 'n')
-			dir_flag = 'w';
-		else if (dir_flag == 'w')
-			dir_flag = 's';
-		else if (dir_flag == 's')
-			dir_flag = 'e';
+		if (dir_flag == NORTH)
+			dir_flag = WEST;
+		else if (dir_flag == WEST)
+			dir_flag = SOUTH;
+		else if (dir_flag == SOUTH)
+			dir_flag = EAST;
 		else
-			dir_flag = 'n';
+			dir_flag = NORTH;
 		printf("Direction = %c\n", dir_flag);
 	}
 }
@@ -220,113 +223,102 @@ void right_turn_wls(void)
 	printf("Timer = %d\n", timer);
 	for (int i = 0; i <= timer / 180; i++)
 	{
-		if (dir_flag == 'n')
-			dir_flag = 'e';
-		else if (dir_flag == 'w')
-			dir_flag = 'n';
-		else if (dir_flag == 's')
-			dir_flag = 'w';
+		if (dir_flag == NORTH)
+			dir_flag = EAST;
+		else if (dir_flag == WEST)
+			dir_flag = NORTH;
+		else if (dir_flag == SOUTH)
+			dir_flag = WEST;
 		else
-			dir_flag = 's';
+			dir_flag = SOUTH;
 		printf("Direction = %c\n", dir_flag);
 	}
 }
 
 
-bool turn_west(void) {           // turn west if possible and return true, otherwise return false
-	if(dir_flag == 'n') {
+void turn_west(void) {           // turn west if possible and return true, otherwise return false
+	if(dir_flag == NORTH) {
 		left_turn_wls();
 	}
-	else if(dir_flag == 's') {
+	else if(dir_flag == SOUTH) {
 		right_turn_wls();
 	}
-	else if(dir_flag == 'e') {
+	else if(dir_flag == EAST) {
 		left_turn_wls();
-		while(dir_flag != 'e') {
-			if(dir_flag == 'w')
-				return true;
+		while(dir_flag != EAST) {
+			if(dir_flag == WEST)
+				break;
 			left_turn_wls();
 		}
 	}
-	if(dir_flag == 'w') {
-		return true;
-	}
-	return false;
+	if(dir_flag != WEST && curr_loc.y - 1 >= 0)
+		medical_camp_map[curr_loc.x][curr_loc.y - 1] = 0;
 }
 
-bool turn_east(void) {		// turn east if possible and return true, otherwise return false
-	if(dir_flag == 'n') {
+void turn_east(void) {		// turn east if possible and return true, otherwise return false
+	if(dir_flag == NORTH) {
 		right_turn_wls();
 
 	}
-	else if(dir_flag == 's') {
+	else if(dir_flag == SOUTH) {
 		left_turn_wls();
 
 	}
-	else if(dir_flag == 'w') {
+	else if(dir_flag == WEST) {
 		left_turn_wls();
-		while(dir_flag != 'w') {
-			if(dir_flag == 'e')
-				return true;
+		while(dir_flag != WEST) {
+			if(dir_flag == EAST)
+				break;
 			left_turn_wls();
 		}
 	}
-	if(dir_flag == 'e') {
-		return true;
-	}
-	return false;
+	if(dir_flag != EAST && curr_loc.y + 1 < SIZE)
+		medical_camp_map[curr_loc.x][curr_loc.y + 1] = 0;
 }
 
-bool turn_north(void) {		// turn north if possible and return true, otherwise return false
-	if(dir_flag == 'e') {
+void turn_north(void) {		// turn north if possible and return true, otherwise return false
+	if(dir_flag == EAST) {
 		left_turn_wls();
-
 	}
-	else if(dir_flag == 'w') {
+	else if(dir_flag == WEST) {
 		right_turn_wls();
-
 	}
-	else if(dir_flag == 's') {
+	else if(dir_flag == SOUTH) {
 		left_turn_wls();
-		while(dir_flag != 's') {
-			if(dir_flag == 'n')
-				return true;
+		while(dir_flag != SOUTH) {
+			if(dir_flag == NORTH)
+				break;
 			left_turn_wls();
 		}
 	}
-	if(dir_flag == 'n') {
-		return true;
-	}
-	return false;
+	if(dir_flag != NORTH && curr_loc.x - 1 >= 0)
+		medical_camp_map[curr_loc.x - 1][curr_loc.y] = 0;
 }
 
-bool turn_south(void) {		 // turn south if possible and return true, otherwise return false
-	if(dir_flag == 'e') {
+void turn_south(void) {		 // turn south if possible and return true, otherwise return false
+	if(dir_flag == EAST) {
 		right_turn_wls();
 	}
-	else if(dir_flag == 'w') {
+	else if(dir_flag == WEST) {
 		left_turn_wls();
 	}
-	else if(dir_flag == 'n') {
+	else if(dir_flag == NORTH) {
 		left_turn_wls();
-		while(dir_flag != 'n') {
-			if(dir_flag == 's')
-				return true;
+		while(dir_flag != NORTH) {
+			if(dir_flag == SOUTH)
+				break;
 			left_turn_wls();
 		}
 	}
-	if(dir_flag == 's') {
-		return true;
-	}
-	return false;
+	if(dir_flag != SOUTH && curr_loc.x + 1 < SIZE)
+		medical_camp_map[curr_loc.x + 1][curr_loc.y] = 0;
 }
 
 Point get_cords(unsigned char plot_no)
 {
 	unsigned char plots_x[] = {8, 6, 4, 2}, plots_y[] = {7, 1, 3, 5};
 	Point cords;
-	int x;
-	x = (plot_no - 1) / 4;
+	int x = (plot_no - 1) / 4;
 	cords.x = SIZE - plots_x[x];
 	cords.y = plots_y[(plot_no % 4)];
 	return cords;
@@ -337,6 +329,7 @@ void initialize_medical_camp_map(void) {
 	for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
 			medical_camp_map[i][j] = 1;
+			turned[i][j] = 0;
 		}
 	}
 
@@ -349,7 +342,7 @@ void initialize_medical_camp_map(void) {
 
 }
 
-void check_plot() {
+void check_plot(void) {
 	if(dir_flag == 'n') {
 		if(curr_loc.y - 1 >= 0 && medical_camp_map[curr_loc.x][curr_loc.y - 1] == 0) {
 			medical_camp_map[curr_loc.x][curr_loc.y - 1] = read_color_sensor_data();
@@ -392,31 +385,62 @@ void check_plot() {
 	}
 }
 
+void check_path_possible(void) {
+	if(turned[curr_loc.x][curr_loc.y])
+		return;
+	turned[curr_loc.x][curr_loc.y] = 1;
+	if(dir_flag == WEST) {
+		turn_north();
+		turn_east();
+		turn_south();
+		turn_west();
+	}
+	else if(dir_flag == EAST) {
+		turn_north();
+		turn_west();
+		turn_south();
+		turn_east();
+	}
+	else if(dir_flag == NORTH) {
+		turn_east();
+		turn_south();
+		turn_west();
+		turn_north();
+	}
+	else {
+		turn_east();
+		turn_north();
+		turn_west();
+		turn_south();
+	}
+}
+
 bool is_mid_node(Point &node) {
 	return ((node.x & 1) == 0 && (node.y & 1) == 1) || ((node.x & 1) == 1 && (node.y & 1) == 0);
 }
 
 bool move(Point &source, Point &destination) {
 
-	bool is_possible;
+	if(!is_mid_node(source)) {
+		check_path_possible();
+	}
+
+	if (medical_camp_map[destination.x][destination.y] == 0)
+		return false;
 
 	if(destination.y < source.y) {
-		is_possible = turn_west() && forward_wls(1);
+		turn_west();
 	}
 	else if(destination.y > source.y) {
-		is_possible = turn_east() && forward_wls(1);
+		turn_east();
 	}
 	else if(destination.x < source.x) {
-		is_possible = turn_north() && forward_wls(1);
+		turn_north();
 	}
 	else {
-		is_possible = turn_south() && forward_wls(1);
+		turn_south();
 	}
-
-	if(!is_possible) {
-		medical_camp_map[destination.x][destination.y] = 0;
-		return false;
-	}
+	forward_wls(1);
 
 	if(is_mid_node(destination))
 		check_plot();
@@ -437,7 +461,7 @@ char traverse_line_to_goal(Point &source, Point &destination) {
 
 	for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
-			visited[i][j] = false;
+			visited[i][j] = 0;
 			parent[i][j] = {0, 0};
 		}
 	}
