@@ -321,7 +321,7 @@ char read_color_sensor_data(void)
 
 	filter_blue();
 	if(color_sensor_pulse_count >= 5000)
-		color = 'B';
+		color = 'W';
 	_delay_ms(500);
 
 	return color;
