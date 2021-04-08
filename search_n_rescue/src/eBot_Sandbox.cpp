@@ -103,7 +103,7 @@ void forward_wls(unsigned char node)
 				printf("Intersection Reached\n");
 				forward();
 				velocity(200, 200);
-				_delay_ms(110);
+				_delay_ms(125);
 				stop();
 				if (dir_flag == NORTH)
 					curr_loc.x--;
@@ -410,10 +410,11 @@ void check_plot(void) {
 	}
 }
 
-void check_path_possible(void) {
-	if(turned[curr_loc.x][curr_loc.y])
+/*
+void check_path_possible(int x, int y) {
+	if(turned[x][y])
 		return;
-	turned[curr_loc.x][curr_loc.y] = 1;
+	turned[x][y] = 1;
 
 	bool is_north_possible = false;
 	bool is_south_possible = false;
@@ -508,15 +509,63 @@ void check_path_possible(void) {
 		}
 	}
 
-	if(!is_north_possible && curr_loc.x - 1 >= 0)
-		medical_camp_map[curr_loc.x - 1][curr_loc.y] = 0;
-	if(!is_south_possible && curr_loc.x + 1 < SIZE)
-		medical_camp_map[curr_loc.x + 1][curr_loc.y] = 0;
-	if(!is_east_possible && curr_loc.y + 1 < SIZE)
-		medical_camp_map[curr_loc.x][curr_loc.y + 1] = 0;
-	if(!is_west_possible && curr_loc.y - 1 >= 0)
-		medical_camp_map[curr_loc.x][curr_loc.y - 1] = 0;
+	if(!is_north_possible && x - 1 >= 0)
+		medical_camp_map[x - 1][y] = 0;
+	if(!is_south_possible && x + 1 < SIZE)
+		medical_camp_map[x + 1][y] = 0;
+	if(!is_east_possible && y + 1 < SIZE)
+		medical_camp_map[x][y + 1] = 0;
+	if(!is_west_possible && y - 1 >= 0)
+		medical_camp_map[x][y - 1] = 0;
 
+}
+*/
+
+unsigned char check_front() {
+	readSensor();
+	if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50) {
+		return 0;
+	}
+	return 1;
+}
+
+void check_path_possible(int x, int y) {
+	if(turned[x][y])
+		return;
+	turned[x][y] = 1;
+
+	if(dir_flag == NORTH) {
+		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
+			medical_camp_map[x - 1][y] = check_front();
+		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
+			medical_camp_map[x][y - 1] = turn_west();
+		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
+			medical_camp_map[x][y + 1] = turn_east();
+	}
+	else if(dir_flag == SOUTH) {
+		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
+			medical_camp_map[x + 1][y] = check_front();
+		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
+			medical_camp_map[x][y - 1] = turn_west();
+		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
+			medical_camp_map[x][y + 1] = turn_east();
+	}
+	else if(dir_flag == WEST) {
+		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
+			medical_camp_map[x][y - 1] = check_front();
+		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
+			medical_camp_map[x - 1][y] = turn_north();
+		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
+			medical_camp_map[x + 1][y] = turn_south();
+	}
+	else {
+		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
+			medical_camp_map[x][y + 1] = check_front();
+		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
+			medical_camp_map[x - 1][y] = turn_north();
+		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
+			medical_camp_map[x + 1][y] = turn_south();
+	}
 }
 
 unsigned char is_mid_node(Point &node) {
@@ -528,7 +577,7 @@ unsigned char is_mid_node(Point &node) {
 unsigned char move(Point &source, Point &destination) {
 
 	if(!is_mid_node(source)) {
-		check_path_possible();
+		check_path_possible(source.x, source.y);
 	}
 
 	if (medical_camp_map[destination.x][destination.y] == 0)
