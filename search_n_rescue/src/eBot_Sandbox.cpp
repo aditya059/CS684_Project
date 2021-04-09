@@ -21,6 +21,8 @@
 #define GREEN 'G'
 #define RED 'R'
 
+#define DESTINATION 'D'
+
 using namespace std;
 
 //------------------------------ GLOBAL VARIABLES -------------------------------
@@ -65,7 +67,7 @@ long long int TimeCounter = 0L;
 */
 //
 
-void readSensor()
+void readSensor(void)
 {
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
@@ -348,7 +350,7 @@ unsigned char plot_not_checked(int x, int y) {
 	if(x < 0 || x >= SIZE || y < 0 || y >= SIZE)          // Invalid coordinate
 		return 0;
 
-	if(medical_camp_map[x][y] == 0)
+	if(medical_camp_map[x][y] == 0 || medical_camp_map[x][y] == DESTINATION)
 		return 1;
 	return 0;
 }
@@ -357,16 +359,14 @@ void store_and_print_injury_type(int x, int y) {
 
 	unsigned char plot_no = 4 * (x / 2) + (y / 2) + 1;
 
-	printf("\n\nPlot No. = %d - ", plot_no);
-
 	medical_camp_map[x][y] = read_color_sensor_data();
 
 	if(medical_camp_map[x][y] == GREEN)
-		printf("MinorInjury\n\n\n");
+		printf("\n\nPlot No. = %d - MinorInjury\n\n\n", plot_no);
 	else if(medical_camp_map[x][y] == RED)
-		printf("MajorInjury\n\n\n");
+		printf("\n\nPlot No. = %d - MajorInjury\n\n\n", plot_no);
 	else
-		printf("NoInjury\n\n\n");
+		printf("\n\nPlot No. = %d - NoInjury\n\n\n", plot_no);
 }
 
 void check_plot(void) {
@@ -377,7 +377,6 @@ void check_plot(void) {
 		if(plot_not_checked(curr_loc.x, curr_loc.y + 1)) {
 			turn_south();
 			store_and_print_injury_type(curr_loc.x, curr_loc.y + 1);
-			turn_north();
 		}
 	}
 	if(dir_flag == SOUTH) {
@@ -387,7 +386,6 @@ void check_plot(void) {
 		if(plot_not_checked(curr_loc.x, curr_loc.y - 1)) {
 			turn_north();
 			store_and_print_injury_type(curr_loc.x, curr_loc.y - 1);
-			turn_south();
 		}
 	}
 	if(dir_flag == WEST) {
@@ -397,7 +395,6 @@ void check_plot(void) {
 		if(plot_not_checked(curr_loc.x - 1, curr_loc.y)) {
 			turn_east();
 			store_and_print_injury_type(curr_loc.x - 1, curr_loc.y);
-			turn_west();
 		}
 	}
 	if(dir_flag == EAST) {
@@ -407,12 +404,11 @@ void check_plot(void) {
 		if(plot_not_checked(curr_loc.x + 1, curr_loc.y)) {
 			turn_west();
 			store_and_print_injury_type(curr_loc.x + 1, curr_loc.y);
-			turn_east();
 		}
 	}
 }
 
-unsigned char check_front() {
+unsigned char check_front(void) {
 	readSensor();
 	if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50) {
 		return 0;
@@ -494,19 +490,22 @@ unsigned char move(Point &source, Point &destination) {
 	return 1;
 }
 
-
-/**
- * @brief      Executes the logic to achieve the aim of Lab 4
- */
-
-unsigned char traverse_line_to_goal(Point &top_mid_node, Point &bottom_mid_node, Point &left_mid_node, Point &right_mid_node) {
+/*
+ * search_char = 'R' for MajorInjury of fetch request, or
+ *               'G' for MinorInjury of fetch request, or
+ *               'D' for destination of scan request.
+*/
+unsigned char traverse_line_to_goal(unsigned char search_char) {
 
 	unsigned char visited[SIZE][SIZE];
 	Point parent[SIZE][SIZE];
 
 	for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
-			visited[i][j] = 0;
+			if(medical_camp_map[i][j] == 1 || medical_camp_map[i][j] == search_char)
+				visited[i][j] = 0;
+			else
+				visited[i][j] = 1;
 			parent[i][j] = {0, 0};
 		}
 	}
@@ -516,50 +515,39 @@ unsigned char traverse_line_to_goal(Point &top_mid_node, Point &bottom_mid_node,
 	Queue.push(curr_loc);
 	visited[curr_loc.x][curr_loc.y] = 1;
 	parent[curr_loc.x][curr_loc.y] = {-1, -1};
+
 	while(!Queue.empty()) {
 		Point p = Queue.front();
 		Queue.pop();
 
-		if(p.x == top_mid_node.x && p.y == top_mid_node.y) {
-			destination = top_mid_node;
-			break;
-		}
-		if(p.x == bottom_mid_node.x && p.y == bottom_mid_node.y) {
-			destination = bottom_mid_node;
-			break;
-		}
-		if(p.x == left_mid_node.x && p.y == left_mid_node.y) {
-			destination = left_mid_node;
-			break;
-		}
-		if(p.x == right_mid_node.x && p.y == right_mid_node.y) {
-			destination = right_mid_node;
+		if(medical_camp_map[p.x][p.y] == search_char) {
+			destination = parent[p.x][p.y];
 			break;
 		}
 
 		// Moving West
-		if(p.y - 1 >= 0 && medical_camp_map[p.x][p.y - 1] == 1 && visited[p.x][p.y - 1] == 0) {
+		if(p.y - 1 >= 0 && visited[p.x][p.y - 1] == 0) {
 			Queue.push({p.x, p.y - 1});
 			visited[p.x][p.y - 1] = 1;
 			parent[p.x][p.y - 1] = {p.x, p.y};
 		}
 
 		// Moving North
-		if(p.x - 1 >= 0 && medical_camp_map[p.x - 1][p.y] == 1 && visited[p.x - 1][p.y] == 0) {
+		if(p.x - 1 >= 0 && visited[p.x - 1][p.y] == 0) {
 			Queue.push({p.x - 1, p.y});
 			visited[p.x - 1][p.y] = 1;
 			parent[p.x - 1][p.y] = {p.x, p.y};
 		}
 
 		// Moving East
-		if(p.y + 1 < SIZE && medical_camp_map[p.x][p.y + 1] == 1 && visited[p.x][p.y + 1] == 0) {
+		if(p.y + 1 < SIZE && visited[p.x][p.y + 1] == 0) {
 			Queue.push({p.x, p.y + 1});
 			visited[p.x][p.y + 1] = 1;
 			parent[p.x][p.y + 1] = {p.x, p.y};
 		}
 
 		// Moving South
-		if(p.x + 1 < SIZE && medical_camp_map[p.x + 1][p.y] == 1 && visited[p.x + 1][p.y] == 0) {
+		if(p.x + 1 < SIZE && visited[p.x + 1][p.y] == 0) {
 			Queue.push({p.x + 1, p.y});
 			visited[p.x + 1][p.y] = 1;
 			parent[p.x + 1][p.y] = {p.x, p.y};
@@ -588,61 +576,19 @@ unsigned char traverse_line_to_goal(Point &top_mid_node, Point &bottom_mid_node,
 	return 1;
 }
 
-void traverse_to_nearest_node(Point &top_mid_node, Point &bottom_mid_node, Point &left_mid_node, Point &right_mid_node) {
-	while(!traverse_line_to_goal(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node));
+void traverse_to_nearest_node(unsigned char search_char) {
+	while(!traverse_line_to_goal(search_char));
 }
 
-void serve_request() {
-	// Scan_Request
-	_delay_ms(2000);
-	printf("Identify Survivor at plot 3\n");
-	Point cords = get_cords(3);
-	Point top_mid_node = {cords.x - 1, cords.y};
-	Point bottom_mid_node = {cords.x + 1, cords.y};
-	Point left_mid_node = {cords.x, cords.y - 1};
-	Point right_mid_node = {cords.x, cords.y + 1};
-	traverse_to_nearest_node(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node);
-
-	//
-//	_delay_ms(2000);
-//	printf("Fetch RED Survivor\n");
-//
-}
-
-void path_planning(void)
-{
-	initialize_medical_camp_map();
-
-	forward_wls(1);
-
-	Point cords;
-	char not_satisfied = 1;
-	for (unsigned char i = NO_OF_PLOTS; i >= 1; i--)
-	{
-		printf("Plot No. = %d\n", i);
-		cords = get_cords(i);
-		if(medical_camp_map[cords.x][cords.y] == 0) {
-
-			Point top_mid_node = {cords.x - 1, cords.y};
-			Point bottom_mid_node = {cords.x + 1, cords.y};
-			Point left_mid_node = {cords.x, cords.y - 1};
-			Point right_mid_node = {cords.x, cords.y + 1};
-
-			traverse_to_nearest_node(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node);
-		}
-
-		//printf("TimeCounter = %lld\n", TimeCounter);
-		//_delay_ms(100000);
-		if(TimeCounter > 3000 && not_satisfied) {
-			serve_request();
-			not_satisfied = 0;
-		}
-
-	}
-	traverse_to_nearest_node(med_loc, med_loc, med_loc, med_loc);
+void traverse_to_medical_camp(void) {
+	medical_camp_map[med_loc.x][med_loc.y] = DESTINATION;
+	traverse_to_nearest_node(DESTINATION);
+	move(curr_loc, med_loc);
 	turn_east();
 	forward_wls(1);
+}
 
+void print_all_result(void) {
 	printf("\n\n");
 	unsigned char plot_no = 0;
 	for(int i = 0; i < SIZE; i++) {
@@ -658,4 +604,58 @@ void path_planning(void)
 			}
 		}
 	}
+}
+
+void scan(unsigned char plot_no) {
+	Point cords = get_cords(plot_no);
+	medical_camp_map[cords.x][cords.y] = DESTINATION;
+	traverse_to_nearest_node(DESTINATION);
+}
+
+void fetch(unsigned char search_char) {
+	traverse_to_nearest_node(search_char);
+	_delay_ms(10000);
+}
+
+void serve_request(void) {
+
+	// Scan Request
+	_delay_ms(2000);
+	printf("Identify Survivor at plot 3\n");
+	scan(3);
+
+	_delay_ms(2000);
+	printf("Fetch GREEN Survivor\n");
+	fetch(GREEN);
+}
+
+void path_planning(void)
+{
+	initialize_medical_camp_map();
+
+	forward_wls(1);
+
+	char not_satisfied = 1;
+
+	for (unsigned char i = NO_OF_PLOTS; i >= 1; i--)
+	{
+		printf("Plot No. = %d\n", i);
+
+		Point cords = get_cords(i);
+
+		if(medical_camp_map[cords.x][cords.y] == 0) {
+			scan(i);
+		}
+
+		printf("TimeCounter = %lld\n", TimeCounter);
+		_delay_ms(1000);
+		if(TimeCounter > 3000 && not_satisfied) {
+			serve_request();
+			not_satisfied = 0;
+		}
+	}
+
+	traverse_to_medical_camp();
+
+	print_all_result();
 }
