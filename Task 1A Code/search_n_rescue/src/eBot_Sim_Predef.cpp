@@ -308,8 +308,7 @@ int print_ir_prox_5_data(unsigned char front_prox_sensor_data)
 
 char read_color_sensor_data(void)
 {
-	unsigned char color = 'W';
-
+	char color = 'W';
 	filter_red();
 	if(color_sensor_pulse_count >= 5000)
 		color = 'R';

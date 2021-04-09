@@ -13,13 +13,14 @@
 #define SIZE 9
 #define NO_OF_PLOTS 16
 
-#define NORTH 'n'
-#define SOUTH 's'
 #define WEST 'w'
 #define EAST 'e'
+#define NORTH 'n'
+#define SOUTH 's'
 
 #define GREEN 'G'
 #define RED 'R'
+#define WHITE 'W'
 
 using namespace std;
 
@@ -43,8 +44,6 @@ unsigned char dir_flag = NORTH;
 unsigned char medical_camp_map[SIZE][SIZE];
 
 unsigned char turned[SIZE][SIZE];
-
-long long int TimeCounter = 0L;
 
 
 //---------------------------------- FUNCTIONS ----------------------------------
@@ -70,7 +69,6 @@ void readSensor()
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	TimeCounter++;
 	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -176,7 +174,7 @@ void left_turn_wls(void)
 		readSensor();
 		if (left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
-			stop();
+			velocity(0, 0);
 			break;
 		}
 		_delay_ms(10);
@@ -219,7 +217,7 @@ void right_turn_wls(void)
 		readSensor();
 		if (left_wl_sensor_data < 50 && center_wl_sensor_data > 200 && right_wl_sensor_data < 50)
 		{
-			stop();
+			velocity(0, 0);
 			break;
 		}
 		_delay_ms(10);
@@ -338,26 +336,26 @@ void initialize_medical_camp_map(void) {
 	for (unsigned char i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		cords = get_cords(i);
-		medical_camp_map[cords.x][cords.y] = 0;
+		medical_camp_map[cords.x][cords.y] = i + 1;
 	}
 
 }
 
 unsigned char plot_not_checked(int x, int y) {
 
-	if(x < 0 || x >= SIZE || y < 0 || y >= SIZE)          // Invalid coordinate
+	if(x < 0 && x >= SIZE && y < 0 && y >= SIZE)
 		return 0;
 
-	if(medical_camp_map[x][y] == 0)
+	unsigned char stored_value = medical_camp_map[x][y];
+
+	if(stored_value >= 2 && stored_value <= NO_OF_PLOTS + 1)
 		return 1;
 	return 0;
 }
 
 void store_and_print_injury_type(int x, int y) {
 
-	unsigned char plot_no = 4 * (x / 2) + (y / 2) + 1;
-
-	printf("\n\nPlot No. = %d - ", plot_no);
+	printf("\n\nPlot No. = %d - ", medical_camp_map[x][y] - 1);
 
 	medical_camp_map[x][y] = read_color_sensor_data();
 
@@ -412,6 +410,117 @@ void check_plot(void) {
 	}
 }
 
+/*
+void check_path_possible(int x, int y) {
+	if(turned[x][y])
+		return;
+	turned[x][y] = 1;
+
+	bool is_north_possible = false;
+	bool is_south_possible = false;
+	bool is_east_possible = false;
+	bool is_west_possible = false;
+
+	if(dir_flag == WEST) {
+		is_east_possible = true;
+		while(dir_flag != EAST) {
+			right_turn_wls();
+			if(dir_flag == NORTH) {
+				is_north_possible = true;
+				break;
+			}
+		}
+		left_turn_wls();
+		while(dir_flag != EAST) {
+			if(dir_flag == WEST) {
+				is_west_possible = true;
+			}
+			if(dir_flag == SOUTH) {
+				is_south_possible = true;
+				break;
+			}
+			left_turn_wls();
+		}
+	}
+
+	else if(dir_flag == EAST) {
+		is_west_possible = true;
+		while(dir_flag != WEST) {
+			right_turn_wls();
+			if(dir_flag == SOUTH) {
+				is_south_possible = true;
+				break;
+			}
+		}
+		left_turn_wls();
+		while(dir_flag != WEST) {
+			if(dir_flag == EAST) {
+				is_east_possible = true;
+			}
+			if(dir_flag == NORTH) {
+				is_north_possible = true;
+				break;
+			}
+			left_turn_wls();
+		}
+	}
+
+	else if(dir_flag == NORTH) {
+		is_south_possible = true;
+		while(dir_flag != SOUTH) {
+			right_turn_wls();
+			if(dir_flag == EAST) {
+				is_east_possible = true;
+				break;
+			}
+		}
+		left_turn_wls();
+		while(dir_flag != SOUTH) {
+			if(dir_flag == NORTH) {
+				is_north_possible = true;
+			}
+			if(dir_flag == WEST) {
+				is_west_possible = true;
+				break;
+			}
+			left_turn_wls();
+		}
+	}
+
+	else {
+		is_north_possible = true;
+		while(dir_flag != NORTH) {
+			right_turn_wls();
+			if(dir_flag == WEST) {
+				is_west_possible = true;
+				break;
+			}
+		}
+		left_turn_wls();
+		while(dir_flag != NORTH) {
+			if(dir_flag == SOUTH) {
+				is_south_possible = true;
+			}
+			if(dir_flag == EAST) {
+				is_east_possible = true;
+				break;
+			}
+			left_turn_wls();
+		}
+	}
+
+	if(!is_north_possible && x - 1 >= 0)
+		medical_camp_map[x - 1][y] = 0;
+	if(!is_south_possible && x + 1 < SIZE)
+		medical_camp_map[x + 1][y] = 0;
+	if(!is_east_possible && y + 1 < SIZE)
+		medical_camp_map[x][y + 1] = 0;
+	if(!is_west_possible && y - 1 >= 0)
+		medical_camp_map[x][y - 1] = 0;
+
+}
+*/
+
 unsigned char check_front() {
 	readSensor();
 	if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50) {
@@ -421,7 +530,7 @@ unsigned char check_front() {
 }
 
 void check_path_possible(int x, int y) {
-	if(turned[x][y])										// Has already turned before to check all valid paths
+	if(turned[x][y])
 		return;
 	turned[x][y] = 1;
 
@@ -592,23 +701,6 @@ void traverse_to_nearest_node(Point &top_mid_node, Point &bottom_mid_node, Point
 	while(!traverse_line_to_goal(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node));
 }
 
-void serve_request() {
-	// Scan_Request
-	_delay_ms(2000);
-	printf("Identify Survivor at plot 3\n");
-	Point cords = get_cords(3);
-	Point top_mid_node = {cords.x - 1, cords.y};
-	Point bottom_mid_node = {cords.x + 1, cords.y};
-	Point left_mid_node = {cords.x, cords.y - 1};
-	Point right_mid_node = {cords.x, cords.y + 1};
-	traverse_to_nearest_node(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node);
-
-	//
-//	_delay_ms(2000);
-//	printf("Fetch RED Survivor\n");
-//
-}
-
 void path_planning(void)
 {
 	initialize_medical_camp_map();
@@ -616,12 +708,11 @@ void path_planning(void)
 	forward_wls(1);
 
 	Point cords;
-	char not_satisfied = 1;
-	for (unsigned char i = NO_OF_PLOTS; i >= 1; i--)
+	for (unsigned char i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		printf("Plot No. = %d\n", i);
 		cords = get_cords(i);
-		if(medical_camp_map[cords.x][cords.y] == 0) {
+		if(medical_camp_map[cords.x][cords.y] <= NO_OF_PLOTS + 1) {
 
 			Point top_mid_node = {cords.x - 1, cords.y};
 			Point bottom_mid_node = {cords.x + 1, cords.y};
@@ -630,14 +721,6 @@ void path_planning(void)
 
 			traverse_to_nearest_node(top_mid_node, bottom_mid_node, left_mid_node, right_mid_node);
 		}
-
-		//printf("TimeCounter = %lld\n", TimeCounter);
-		//_delay_ms(100000);
-		if(TimeCounter > 3000 && not_satisfied) {
-			serve_request();
-			not_satisfied = 0;
-		}
-
 	}
 	traverse_to_nearest_node(med_loc, med_loc, med_loc, med_loc);
 	turn_east();
