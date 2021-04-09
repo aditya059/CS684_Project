@@ -21,6 +21,8 @@
 #define GREEN 'G'
 #define RED 'R'
 
+#define SCAN 'S'
+
 #define DESTINATION 'D'
 
 using namespace std;
@@ -340,7 +342,7 @@ void initialize_medical_camp_map(void) {
 	for (unsigned char i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		cords = get_cords(i);
-		medical_camp_map[cords.x][cords.y] = 0;
+		medical_camp_map[cords.x][cords.y] = DESTINATION;
 	}
 
 }
@@ -350,7 +352,7 @@ unsigned char plot_not_checked(int x, int y) {
 	if(x < 0 || x >= SIZE || y < 0 || y >= SIZE)          // Invalid coordinate
 		return 0;
 
-	if(medical_camp_map[x][y] == 0 || medical_camp_map[x][y] == DESTINATION)
+	if(medical_camp_map[x][y] == DESTINATION)
 		return 1;
 	return 0;
 }
@@ -493,12 +495,15 @@ unsigned char move(Point &source, Point &destination) {
 /*
  * search_char = 'R' for MajorInjury of fetch request, or
  *               'G' for MinorInjury of fetch request, or
- *               'D' for destination of scan request.
+ *               'D' for destination
+ *               'S' for scan request
 */
+// Reference : https://www.geeksforgeeks.org/shortest-distance-two-cells-matrix-grid/
 unsigned char traverse_line_to_goal(unsigned char search_char) {
 
 	unsigned char visited[SIZE][SIZE];
 	Point parent[SIZE][SIZE];
+	unsigned char is_found = 0;
 
 	for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
@@ -521,6 +526,7 @@ unsigned char traverse_line_to_goal(unsigned char search_char) {
 		Queue.pop();
 
 		if(medical_camp_map[p.x][p.y] == search_char) {
+			is_found = 1;
 			destination = parent[p.x][p.y];
 			break;
 		}
@@ -556,33 +562,35 @@ unsigned char traverse_line_to_goal(unsigned char search_char) {
 
 	printf("Source = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", curr_loc.x, curr_loc.y, destination.x, destination.y, dir_flag);
 
-	stack<Point> Stack;
-	Point temp = destination;
-	while(temp.x != -1 && temp.y != -1) {
-		Stack.push(temp);
-		temp = parent[temp.x][temp.y];
-	}
+	if(is_found) {
+		stack<Point> Stack;
+		Point temp = destination;
+		while(temp.x != -1 && temp.y != -1) {
+			Stack.push(temp);
+			temp = parent[temp.x][temp.y];
+		}
 
-	temp = Stack.top();
-	Stack.pop();
-	while(!Stack.empty()) {
-		Point temp1 = Stack.top();
+		temp = Stack.top();
 		Stack.pop();
-		if(!move(temp, temp1))
-			return 0;
-		temp = temp1;
+		while(!Stack.empty()) {
+			Point temp1 = Stack.top();
+			Stack.pop();
+			if(!move(temp, temp1))
+				return 2;
+			temp = temp1;
+		}
 	}
 
-	return 1;
+	return is_found;
 }
 
-void traverse_to_nearest_node(unsigned char search_char) {
-	while(!traverse_line_to_goal(search_char));
+void scan_arena(unsigned char search_char) {
+	while(traverse_line_to_goal(search_char));
 }
 
 void traverse_to_medical_camp(void) {
 	medical_camp_map[med_loc.x][med_loc.y] = DESTINATION;
-	traverse_to_nearest_node(DESTINATION);
+	while(traverse_line_to_goal(DESTINATION) == 2);
 	move(curr_loc, med_loc);
 	turn_east();
 	forward_wls(1);
@@ -608,12 +616,12 @@ void print_all_result(void) {
 
 void scan(unsigned char plot_no) {
 	Point cords = get_cords(plot_no);
-	medical_camp_map[cords.x][cords.y] = DESTINATION;
-	traverse_to_nearest_node(DESTINATION);
+	medical_camp_map[cords.x][cords.y] = SCAN;
+	while(traverse_line_to_goal(SCAN) == 2);
 }
 
 void fetch(unsigned char search_char) {
-	traverse_to_nearest_node(search_char);
+	while(traverse_line_to_goal(search_char) == 2);
 	_delay_ms(10000);
 }
 
@@ -635,27 +643,19 @@ void path_planning(void)
 
 	forward_wls(1);
 
-	char not_satisfied = 1;
+//	char not_satisfied = 1;
 
-	for (unsigned char i = NO_OF_PLOTS; i >= 1; i--)
-	{
-		printf("Plot No. = %d\n", i);
+	scan_arena(DESTINATION);
 
-		Point cords = get_cords(i);
-
-		if(medical_camp_map[cords.x][cords.y] == 0) {
-			scan(i);
-		}
-
-		printf("TimeCounter = %lld\n", TimeCounter);
-		_delay_ms(1000);
-		if(TimeCounter > 3000 && not_satisfied) {
-			serve_request();
-			not_satisfied = 0;
-		}
-	}
+//	_delay_ms(1000);
+//	if(TimeCounter > 3000 && not_satisfied) {
+//		serve_request();
+//		not_satisfied = 0;
+//	}
 
 	traverse_to_medical_camp();
+
+	printf("TimeCounter = %lld\n", TimeCounter);
 
 	print_all_result();
 }
