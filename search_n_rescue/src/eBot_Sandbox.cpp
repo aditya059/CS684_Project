@@ -352,7 +352,7 @@ unsigned char plot_not_checked(int x, int y) {
 	if(x < 0 || x >= SIZE || y < 0 || y >= SIZE)          // Invalid coordinate
 		return 0;
 
-	if(medical_camp_map[x][y] == DESTINATION)
+	if(medical_camp_map[x][y] == DESTINATION || medical_camp_map[x][y] == SCAN)
 		return 1;
 	return 0;
 }
@@ -463,6 +463,9 @@ unsigned char is_mid_node(Point &node) {
 	return 0;
 }
 
+char not_satisfied = 1;
+void serve_request(void);
+
 unsigned char move(Point &source, Point &destination) {
 
 	if(!is_mid_node(source)) {
@@ -488,6 +491,11 @@ unsigned char move(Point &source, Point &destination) {
 
 	if(is_mid_node(destination))
 		check_plot();
+
+	if(TimeCounter > 3000 && not_satisfied) {
+		not_satisfied = 0;
+		serve_request();
+	}
 
 	return 1;
 }
@@ -643,19 +651,12 @@ void path_planning(void)
 
 	forward_wls(1);
 
-//	char not_satisfied = 1;
-
 	scan_arena(DESTINATION);
-
-//	_delay_ms(1000);
-//	if(TimeCounter > 3000 && not_satisfied) {
-//		serve_request();
-//		not_satisfied = 0;
-//	}
 
 	traverse_to_medical_camp();
 
 	printf("TimeCounter = %lld\n", TimeCounter);
 
 	print_all_result();
+
 }
