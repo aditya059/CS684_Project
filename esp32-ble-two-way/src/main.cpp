@@ -27,8 +27,8 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
-#define ECHO_TEST_TXD  (GPIO_NUM_32)            // Connected to AVR Rx-0
-#define ECHO_TEST_RXD  (GPIO_NUM_33)            // Connected to AVR Tx-0
+#define ECHO_TEST_TXD  (GPIO_NUM_32)            // Connected to AVR Rx-0 (green jumper)
+#define ECHO_TEST_RXD  (GPIO_NUM_33)            // Connected to AVR Tx-0 (orange jumper)
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 
@@ -152,15 +152,21 @@ void setup() {
 }
 
 uint8_t *data_uart = (uint8_t *) malloc(BUF_SIZE);
+char uart_data[20];
 int len_uart;
+int count = 0;
 
 void loop() {
     len_uart = uart_read_bytes(UART_NUM_1, data_uart, BUF_SIZE, 20 / portTICK_RATE_MS);
-    if(len_uart > 0) {
-        // data_uart[len_uart] = NULL;
+    if(len_uart > 0 && count < 20) {
+        uart_data[count++] = *data_uart;
         Serial.println((char *)data_uart);
-    } else {
-      Serial.println(len_uart);
+    }
+
+    if(count == 20) {
+      Serial.println("Final: ");
+      Serial.println(uart_data);
+      count = 0;
     }
 }
 
