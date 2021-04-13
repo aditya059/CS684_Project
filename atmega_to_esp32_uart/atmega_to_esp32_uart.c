@@ -6,7 +6,6 @@
 // AIM: To send data on UART#0 of ATMega 2560 to ESP32
 // */
 
-
 #define F_CPU 14745600		// Define Crystal Frequency of eYFi-Mega Board
 #include <avr/io.h>				// Standard AVR IO Library
 #include <util/delay.h>			// Standard AVR Delay Library
@@ -505,7 +504,7 @@ void red_read(void) // function to select red filter and display the count gener
 	lcd_cursor(1,1);  //set the cursor on row 1, column 1
 	lcd_string(0, 0, "Red Pulses"); // Display "Red Pulses" on LCD
 	lcd_numeric_value(2,1,red,5);  //Print the count on second row
-	_delay_ms(1000);	// Display for 1000ms or 1 second
+	_delay_ms(100);	// Display for 1000ms or 1 second
 	// lcd_wr_command(0x01); //Clear the LCD
 }
 
@@ -686,64 +685,38 @@ void printSensor() {
 
 void left_turn_wls(void)
 {
-	// printf("Left Turn\n");
-	// printf("Initial Direction = %c\n", dir_flag);
-	left();
-	// _delay_ms(100);
-	velocity(120, 120);
-	while (1)
-	{
-		// timer++;
-		readSensor();
-		if (left_wl_sensor_data < 10 && center_wl_sensor_data > 20 && right_wl_sensor_data < 10)
-		{
-			stop();
-			break;
-		}
-		// _delay_ms(10);
-		lcd_clear();
-		lcd_numeric_value(1, 1, ShaftCountLeft, 4);
-		lcd_numeric_value(1, 4, ShaftCountRight, 4);
-	}
-	if (dir_flag == NORTH)
-		dir_flag = WEST;
-	else if (dir_flag == WEST)
-		dir_flag = SOUTH;
-	else if (dir_flag == SOUTH)
-		dir_flag = EAST;
-	else
-		dir_flag = NORTH;
+	lcd_clear();
+	lcd_string(0, 0, "Turning left...");
+	velocity(150, 150);
+	left_degrees(90);
+	// left();
+	// while (1)
+	// {
+	// 	readSensor();
+	// 	if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10)
+	// 	{
+	// 		stop();
+	// 		break;
+	// 	}
+	// }
 }
 
 void right_turn_wls(void)
 {
-	// printf("Left Turn\n");
-	// printf("Initial Direction = %c\n", dir_flag);
-	left();
-	// _delay_ms(100);
-	velocity(120, 120);
-	while (1)
-	{
-		// timer++;
-		readSensor();
-		if (left_wl_sensor_data < 10 && center_wl_sensor_data > 20 && right_wl_sensor_data < 10)
-		{
-			stop();
-			break;
-		}
-		// _delay_ms(10);
-		lcd_clear();
-		lcd_numeric_value(1, 1, ShaftCountLeft, 4);
-		lcd_numeric_value(1, 4, ShaftCountRight, 4);
-	}
-	if (dir_flag == NORTH)
-		dir_flag = WEST;
-	else if (dir_flag == WEST)
-		dir_flag = SOUTH;
-	else if (dir_flag == SOUTH)
-		dir_flag = EAST;
-	else
-		dir_flag = NORTH;
+	lcd_clear();
+	lcd_string(0, 0, "Turning right...");
+	velocity(150, 150);
+	right_degrees(90);
+	// right();
+	// while (1)
+	// {
+	// 	readSensor();
+	// 	if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10)
+	// 	{
+	// 		stop();
+	// 		break;
+	// 	}
+	// }
 }
 
 // bool last_state = 0; // 0-left, 1-right
@@ -758,16 +731,37 @@ void forward_wls(unsigned char node)
 		{
 
 			readSensor();
+			read_color_sensor();
 
-			if (left_wl_sensor_data < 10 && center_wl_sensor_data > 20 && right_wl_sensor_data < 10)
+			if(red < 3000) {
+				lcd_clear();
+				lcd_numeric_value(1, 1, i, 4);
+				velocity(110,110);
+				// forward();
+				forward_mm(120);
+				// _delay_ms(200);
+				velocity(0, 0);
+				if (dir_flag == NORTH)
+					curr_loc.x--;
+				else if (dir_flag == SOUTH)
+					curr_loc.x++;
+				else if (dir_flag == WEST)
+					curr_loc.y--;
+				else
+					curr_loc.y++;
+	
+				break;
+			}
+
+			if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10)
 			{ // WBW
 				lcd_clear();
 				lcd_string(0, 0, "WBW");
 				// printSensor();
-				velocity(255,255);
+				velocity(150, 150);
 				forward();
 			}
-			else if (left_wl_sensor_data < 10 && center_wl_sensor_data > 20 && right_wl_sensor_data > 20)
+			else if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data >= 10)
 			{ // WBB
 				lcd_clear();
 				lcd_string(0, 0, "WBB");	
@@ -775,15 +769,15 @@ void forward_wls(unsigned char node)
 				velocity(110,110);
 				soft_right();
 			}
-			else if (left_wl_sensor_data < 10 && center_wl_sensor_data < 10 && right_wl_sensor_data > 20)
+			else if (left_wl_sensor_data < 10 && center_wl_sensor_data < 10 && right_wl_sensor_data >= 10)
 			{ // WWB
 				lcd_clear();
 				lcd_string(0, 0, "WWB");	
 				// printSensor();
 				velocity(110,110);
-				right();
+				soft_right();
 			}
-			else if (left_wl_sensor_data > 20 && center_wl_sensor_data > 20 && right_wl_sensor_data < 10)
+			else if (left_wl_sensor_data >= 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10)
 			{ // BBW
 				lcd_clear();
 				lcd_string(0, 0, "BBW");
@@ -791,24 +785,25 @@ void forward_wls(unsigned char node)
 				velocity(110,110);
 				soft_left();
 			}
-			else if (left_wl_sensor_data > 20 && center_wl_sensor_data < 10 && right_wl_sensor_data < 10)
+			else if (left_wl_sensor_data >= 10 && center_wl_sensor_data < 10 && right_wl_sensor_data < 10)
 			{ // BWW
 				lcd_clear();
 				lcd_string(0, 0, "BWW");
 				// printSensor();
 				velocity(110,110);
-				left();
+				soft_left();
 			}
-			else if (left_wl_sensor_data > 20 && center_wl_sensor_data > 20 && right_wl_sensor_data > 20)
+			else if (left_wl_sensor_data >= 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data >= 10)
 			{ // BBB
 				// printf("Intersection Reached\n");
 				lcd_clear();
 				lcd_numeric_value(1, 1, i, 4);
 				// printSensor();
 //				lcd_string(1, 0, "Destination reached!");
-				forward();
+				// forward();
 				velocity(110,110);
-				_delay_ms(300);
+				forward_mm(60);
+				// _delay_ms(200);
 				velocity(0, 0);
 				if (dir_flag == NORTH)
 					curr_loc.x--;
@@ -829,24 +824,24 @@ void forward_wls(unsigned char node)
 				if (t % 4 == 0)
 				{
 					velocity(110,110);
-					left();
+					soft_left();
 				}
 				else if (t % 4 == 1)
 				{
 					velocity(110,110);
-					right();
+					soft_right();
 				}
 				else if (t % 4 == 2)
 				{
 					velocity(110,110);
-					right();
+					soft_right();
 				}
 				else
 				{
 					velocity(110,110);
-					left();
+					soft_left();
 				}
-				_delay_ms(s * 5);
+				_delay_ms(s * 2);
 				if (t % 4 == 3)
 					s *= 2;
 				t++;
@@ -857,6 +852,39 @@ void forward_wls(unsigned char node)
 			// _delay_ms(10);
 		}
 	}
+}
+
+unsigned char error, vl, vr, Kp=5;
+
+void pid_control() {
+	readSensor();
+	printSensor();
+	if (left_wl_sensor_data >= 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10) // BBW
+		error = -1;
+	if (left_wl_sensor_data >= 10 && center_wl_sensor_data < 10 && right_wl_sensor_data < 10) // BWW
+		error = -2;
+	if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10) // WBW
+		error = 0;
+	if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data >= 10) // WBB
+		error = 1;
+	if (left_wl_sensor_data < 10 && center_wl_sensor_data < 10 && right_wl_sensor_data >= 10) // WWB
+		error = 2;
+
+	vl = 160 + error*Kp;
+	vr = 160 - error*Kp;
+}
+
+void forward_wls_pid(unsigned char node) {
+	for(unsigned char i=0; i<node; i++)
+		while(1) {
+			forward();
+			pid_control();
+			velocity(vl, vr);
+			if (left_wl_sensor_data >= 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data >= 10) {
+				stop();
+				break;
+			}
+		}
 }
 
 int main(void) {
@@ -889,39 +917,59 @@ int main(void) {
 	BATT_Voltage = ( ( BATT_V * 100 ) * 0.07902 ) + 0.7;
 	lcd_numeric_value(1, 1, BATT_Voltage, 4);
 
+	// lcd_string(0, 0, "hello world");
+
 	_delay_ms(1000);
 
 	while(1) {
-		forward_wls(3);
-		left_turn_wls();
-		break;
 		// readSensor();
-		// if (left_wl_sensor_data < 10 && center_wl_sensor_data > 20 && right_wl_sensor_data < 10) {
+		// printSensor();
+		forward_wls_pid(1);
+		break;
+		// lcd_string(0, 0, "hello world");
+		// forward_wls(1);
+		// left_turn_wls();
+		// forward_wls(3);
+		// velocity(120, 120);
+		// right_degrees(90);
+		// velocity(150, 150);
+		// forward_mm(100);
+		// read_color_sensor();
+		// velocity(150, 150);
+		// back_mm(120);
+		// right_turn_wls();
+		// forward_wls(3);
+		// right_turn_wls();
+		// forward_wls(1);
+		// break;
+		// readSensor();
+		// if (left_wl_sensor_data < 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data < 10) {
 		// 	// WBW
 		// 	lcd_clear();
 		// 	lcd_string(0, 0, "WBW");
-		// 	// printSensor();
-		// } else if (left_wl_sensor_data < 10 && right_wl_sensor_data > 20) {
+		// 	printSensor();
+		// } else if (left_wl_sensor_data < 10 && right_wl_sensor_data >= 10) {
 		// 	// WBB or WWB
 		// 	lcd_clear();
 		// 	lcd_string(0, 0, "WBB or WWB");
-		// 	// printSensor();
-		// } else if (left_wl_sensor_data > 20 && right_wl_sensor_data < 10) { 
+		// 	printSensor();
+		// } else if (left_wl_sensor_data >= 10 && right_wl_sensor_data < 10) { 
 		// 	// BWW & BBW
 		// 	lcd_clear();
 		// 	lcd_string(0, 0, "BWW & BBW");
-		// 	// printSensor();
-		// } else if (left_wl_sensor_data > 20 && center_wl_sensor_data > 20 && right_wl_sensor_data > 20) { 
+		// 	printSensor();
+		// } else if (left_wl_sensor_data >= 10 && center_wl_sensor_data >= 10 && right_wl_sensor_data >= 10) { 
 		// 	// BBB
 		// 	lcd_clear();
 		// 	lcd_string(0, 0, "BBB");
-		// 	// printSensor();
+		// 	printSensor();
 		// } else {
 		// 	// WWW
 		// 	lcd_clear();
 		// 	lcd_string(0, 0, "WWW");
-		// 	// printSensor();
+		// 	printSensor();
 		// }
+		// _delay_ms(100);
 		// _delay_ms(500);
 		// rx_byte = uart2_readByte();
 		// if(isalnum(rx_byte)) {
