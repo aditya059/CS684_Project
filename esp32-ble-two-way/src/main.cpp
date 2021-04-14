@@ -32,7 +32,7 @@
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 
-#define BUF_SIZE (1024)
+#define BUF_SIZE (128)
 
 #define LED 2
 #define BUTTON 0
@@ -152,22 +152,22 @@ void setup() {
 }
 
 uint8_t *data_uart = (uint8_t *) malloc(BUF_SIZE);
-char uart_data[20];
 int len_uart;
-int count = 0;
+// int count = 0;
 
 void loop() {
     len_uart = uart_read_bytes(UART_NUM_1, data_uart, BUF_SIZE, 20 / portTICK_RATE_MS);
-    if(len_uart > 0 && count < 20) {
-        uart_data[count++] = *data_uart;
-        Serial.println((char *)data_uart);
+    if(len_uart > 0) { // && count < 20) {
+      // count++;
+      Serial.println((char *)data_uart);
+      
     }
 
-    if(count == 20) {
-      Serial.println("Final: ");
-      Serial.println(uart_data);
-      count = 0;
-    }
+    // if(count == 20) {
+    //   Serial.println("Final: ");
+    //   Serial.println(uart_data);
+    //   count = 0;
+    // }
 }
 
 

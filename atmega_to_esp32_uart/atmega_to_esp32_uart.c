@@ -915,17 +915,16 @@ int main(void) {
 	float BATT_Voltage, BATT_V;
 	BATT_V = ADC_Conversion(batt_sensor_channel);
 	BATT_Voltage = ( ( BATT_V * 100 ) * 0.07902 ) + 0.7;
-	lcd_numeric_value(1, 1, BATT_Voltage, 4);
+	lcd_string(0, 0, "hello world");
+	lcd_numeric_value(2, 1, BATT_Voltage, 4);
 
-	// lcd_string(0, 0, "hello world");
-
-	_delay_ms(1000);
+	// _delay_ms(1000);
 
 	while(1) {
 		// readSensor();
 		// printSensor();
-		forward_wls_pid(1);
-		break;
+		// forward_wls_pid(1);
+		// break;
 		// lcd_string(0, 0, "hello world");
 		// forward_wls(1);
 		// left_turn_wls();
@@ -971,16 +970,16 @@ int main(void) {
 		// }
 		// _delay_ms(100);
 		// _delay_ms(500);
-		// rx_byte = uart2_readByte();
-		// if(isalnum(rx_byte)) {
-		// 	if(idx < 100)
-		// 		lcd_array[idx++] = rx_byte;
-		// }
-		// if(rx_byte == '-') {
-		// 	idx = 0;
-		// 	if(lcd_array[0]=='s') {
-		// 		lcd_clear();
-		// 		lcd_string(0, 0, "scan");
+		rx_byte = uart2_readByte();
+		if(isalnum(rx_byte)) {
+			if(idx < 100)
+				lcd_array[idx++] = rx_byte;
+		}
+		if(rx_byte == '-') {
+			idx = 0;
+			if(lcd_array[0]=='s') {
+				lcd_clear();
+				lcd_string(0, 0, "scan");
 		// 		_delay_ms(500);
 		// 		// forward_mm(240);
 		// 		// left_degrees(90);
@@ -992,41 +991,42 @@ int main(void) {
 		// 		// forward_mm(720);
 		// 		// right_degrees(90);
 		// 		// forward_mm(240);
-
-		// 		// struct scan_req *req_info = malloc(sizeof(struct scan_req));
-		// 		// char *curr = strtok(lcd_array, " ");
-		// 		// int curr_int;
-		// 		// sscanf(curr, &curr_int);
-		// 		// req_info->plot = curr_int;
-		// 		// curr = strtok(NULL, " ");
-		// 		// sscanf(curr, &curr_int);
-		// 		// req_info->id = curr_int;
-		// 		// curr = strtok(NULL, " ");
-		// 		// sscanf(curr, &curr_int);
-		// 		// req_info->serverTime = curr_int;
-		// 		// curr = strtok(NULL, " ");
-		// 		// sscanf(curr, &curr_int);
-		// 		// req_info->completeIn = curr_int;
-				
-		// 		// struct scan_resp *resp_info = malloc(sizeof(struct scan_resp));
-		// 		// pass req_info and resp_info to the motion function
-		// 		// _delay_ms(5000);
-		// 		// resp_info->id = 100;
-		// 		// resp_info->plot = 13;
-		// 		// resp_info->timeTaken = 30;
-		// 		// char resp_vals[100];
-		// 		// sprintf(resp_vals, "%d %d %d", resp_info->id, resp_info->plot, resp_info->timeTaken);
-		// 		uart2_puts(MESSAGE);
-		// 		// lcd_clear();
-		// 		// lcd_string(0, 0, resp_vals);
-		// 		// free(req_info);
-		// 		// free(resp_info);
-		// 	}
-		// 	else if(lcd_array[0]=='f') {
-		// 		lcd_clear();
-		// 		lcd_string(0, 0, "fetch");
-		// 	}
-		// }	
+				struct scan_req *req_info = malloc(sizeof(struct scan_req));
+				char *curr = strtok(lcd_array, " ");
+				int curr_int;
+				sscanf(curr, &curr_int);
+				req_info->plot = curr_int;
+				curr = strtok(NULL, " ");
+				sscanf(curr, &curr_int);
+				req_info->id = curr_int;
+				curr = strtok(NULL, " ");
+				sscanf(curr, &curr_int);
+				req_info->serverTime = curr_int;
+				curr = strtok(NULL, " ");
+				sscanf(curr, &curr_int);
+				req_info->completeIn = curr_int;
+						
+				struct scan_resp *resp_info = malloc(sizeof(struct scan_resp));
+				// pass req_info and resp_info to the motion function
+				// 		// _delay_ms(5000);
+				resp_info->id = 100;
+				resp_info->plot = 13;
+				resp_info->timeTaken = 30;
+				char resp_vals[10];
+				memset(resp_vals, 'x', 10);
+				sprintf(resp_vals, "%d %d %d", resp_info->id, resp_info->plot, resp_info->timeTaken);
+				uart2_puts(resp_vals);
+				// 		uart2_puts(MESSAGE);
+				lcd_clear();
+				lcd_string(0, 0, resp_vals);
+				free(req_info);
+				free(resp_info);
+			}
+			else if(lcd_array[0]=='f') {
+				lcd_clear();
+				lcd_string(0, 0, "fetch");
+			}
+		}	
 	}
 
 	return 0;	
