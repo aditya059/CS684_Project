@@ -1,3 +1,5 @@
+# Edited the file /usr/local/lib/python3.8/dist-packages/bleak/backends/service.py: comment the else in add_service(), add_characteristic(), add_descriptor()
+
 import paho.mqtt.client as mqtt
 import json
 
@@ -24,25 +26,28 @@ esp_payload = ""
 
 async def notify(client):
     def keypress_handler(sender, data):
-        print("BUTTON: {1}".format(sender, data))
+        print(f'Received in BLE: {data}')
     await client.start_notify(BUTTON_UUID, keypress_handler)
     while True:
         await asyncio.sleep(0.1)
         # await client.stop_notify(BUTTON_UUID)
 
-
 async def run(client):
     global esp_payload
-    # if not client.is_connected:
-    #     await client.connect()
     while True:
-        switchState = await client.read_gatt_char(LED_UUID)
-        switchState = switchState.decode('utf-8')
-        if switchState == "0":
-            value = bytearray(b'1')
-            # value = value.extend(map(ord, "1"))
-        else:
-            value = bytearray(b'0')
+        if not client.is_connected:
+            print("Connection lost, trying again...")
+            await client.connect()
+            print("Connected!")
+        
+        # await asyncio.sleep(2.0)
+        # switchState = await client.read_gatt_char(LED_UUID)
+        # switchState = switchState.decode('utf-8')
+        # if switchState == "0":
+        #     value = bytearray(b'1')
+        #     # value = value.extend(map(ord, "1"))
+        # else:
+        #     value = bytearray(b'0')
             # value = value.extend(map(ord, "0"))
         # await client.write_gatt_char(LED_UUID, value)
         # vx = v1 + " " + v2 + " " + v3 + " " + v4 + " " + v5
@@ -53,7 +58,7 @@ async def run(client):
             esp_payload = ""
 
 
-        # await asyncio.sleep(2.0)
+        await asyncio.sleep(2.0)
 
 async def main(address):
     async with BleakClient(address) as client:
@@ -85,7 +90,7 @@ def on_message(client, userdata, msg):
         else:
             v = "M"
         esp_payload = d + " " + v + " " + " ".join([str(s) for s in data["params"].values()][1:])
-        esp_payload += " -"
+    esp_payload += " -"
 
     print("Generated payload: ", esp_payload)
     # asyncio.run(run_new(esp_payload))

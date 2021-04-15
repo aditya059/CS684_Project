@@ -27,12 +27,12 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 
-#define ECHO_TEST_TXD  (GPIO_NUM_32)            // Connected to AVR Rx-0 (green jumper)
-#define ECHO_TEST_RXD  (GPIO_NUM_33)            // Connected to AVR Tx-0 (orange jumper)
+#define ECHO_TEST_TXD  (GPIO_NUM_32)            // Connected to AVR Rx-0
+#define ECHO_TEST_RXD  (GPIO_NUM_33)            // Connected to AVR Tx-0
 #define ECHO_TEST_RTS  (UART_PIN_NO_CHANGE)
 #define ECHO_TEST_CTS  (UART_PIN_NO_CHANGE)
 
-#define BUF_SIZE (128)
+#define BUF_SIZE (1024)
 
 #define LED 2
 #define BUTTON 0
@@ -46,7 +46,7 @@ BLECharacteristic *buttonCharacteristic;
 bool deviceConnected = false;
 volatile int buttonState = HIGH;
 
-char ack_buffer[10];
+char ack_buffer[50];
 
 void pin_ISR();
 
@@ -59,6 +59,13 @@ class ServerCallbacks: public BLEServerCallbacks {
     void onDisconnect(BLEServer* pServer) {
       Serial.println("Central dis-connected :(");
       deviceConnected = false;
+      BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+      pAdvertising->addServiceUUID(SERVICE_UUID);
+      pAdvertising->setScanResponse(false);
+      // pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+      pAdvertising->setMinPreferred(0x12);
+      BLEDevice::startAdvertising();
+      Serial.println("Characteristic defined! Now you can read it in your phone!");
     }
 };
 
@@ -74,13 +81,6 @@ class ControlSwitch: public BLECharacteristicCallbacks {
         uart_write_bytes(UART_NUM_1, (const char *) ack_buffer, strlen(ack_buffer));
         return;
       }
-      long switchState = std::strtol(value.c_str(), NULL, 10);
-      if (switchState == 0l) {
-        digitalWrite(LED, LOW);
-      }
-      else {
-        digitalWrite(LED, HIGH);
-      }
     }
 };
 
@@ -88,7 +88,7 @@ class ControlSwitch: public BLECharacteristicCallbacks {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  Serial.println("CUSTOM BUILD!");
+  Serial.println("CUSTOM BUILD2!");
 
   // set up pin
   pinMode(LED, OUTPUT);
@@ -148,26 +148,35 @@ void setup() {
     uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
 
-    Serial.println("Setup complete!");
+    Serial.println("lARGER buffer!");
 }
 
 uint8_t *data_uart = (uint8_t *) malloc(BUF_SIZE);
 int len_uart;
-// int count = 0;
 
 void loop() {
-    len_uart = uart_read_bytes(UART_NUM_1, data_uart, BUF_SIZE, 20 / portTICK_RATE_MS);
-    if(len_uart > 0) { // && count < 20) {
-      // count++;
-      Serial.println((char *)data_uart);
-      
+    len_uart = uart_read_bytes(UART_NUM_1, data_uart, BUF_SIZE, 40 / portTICK_RATE_MS);
+    if(len_uart > 0) {
+        char *curr;
+        curr = strtok((char *)data_uart, " ");
+				int curr_int1, curr_int2, curr_int3;
+        if(curr != NULL) {
+          int curr_int1 = atoi(curr);
+          // sscanf(curr, "%d", &curr_int1);
+          curr = strtok(NULL, " ");
+          int curr_int2 = atoi(curr);
+          // sscanf(curr, "%d", &curr_int2);
+          // int curr_int2 = atoi(curr);
+          curr = strtok(NULL, " ");
+          int curr_int3 = atoi(curr);
+          // sscanf(curr, "%d", &curr_int3);
+          char print_recvd[30];
+          sprintf(print_recvd, "%d %d %d", curr_int1, curr_int2, curr_int3);
+          Serial.println(print_recvd);
+          buttonCharacteristic->setValue(print_recvd);
+          buttonCharacteristic->notify();
+        }
     }
-
-    // if(count == 20) {
-    //   Serial.println("Final: ");
-    //   Serial.println(uart_data);
-    //   count = 0;
-    // }
 }
 
 
