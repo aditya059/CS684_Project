@@ -26,7 +26,7 @@ esp_payload = ""
 
 async def notify(client):
     def keypress_handler(sender, data):
-        print(f'Received in BLE: {data}')
+        print(f'Received in BLE: {data.decode("utf-8")}')
     await client.start_notify(BUTTON_UUID, keypress_handler)
     while True:
         await asyncio.sleep(0.1)
@@ -38,6 +38,9 @@ async def run(client):
         if not client.is_connected:
             print("Connection lost, trying again...")
             await client.connect()
+            def keypress_handler(sender, data):
+                print(f'Received in BLE: {data.decode("utf-8")}')
+            await client.start_notify(BUTTON_UUID, keypress_handler)
             print("Connected!")
         
         # await asyncio.sleep(2.0)
