@@ -5,10 +5,11 @@ import json
 
 import asyncio
 import platform
+import threading
 
 from bleak import BleakClient
 
-import threading
+from coapthon.client.helperclient import HelperClient
 
 LED_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 BUTTON_UUID = "8801f158-f55e-4550-95f6-d260381b99e7"
@@ -23,10 +24,29 @@ address = (
 )
 
 esp_payload = ""
+req_type = ""
+
+coap_host = "13.250.13.141"
+coap_port =5683
+coap_client = HelperClient(server =(coap_host, coap_port))
+coap_path = f"api/v1/{ACCESS_TOKEN}/telemetry"
+
+def keypress_handler(sender, data):
+    global req_type
+    recvd_data = data.decode("utf-8")
+    print(f'Received in BLE: {recvd_data}')
+    parts = recvd_data.split(" ")
+    coap_data = {}
+    coap_data["id"] = parts[0]
+    coap_data["timeTaken"] = parts[2]
+    if req_type == "scan":
+        coap_data["plot"] = parts[1]
+    else:
+        coap_data["type"] = parts[1]
+    coap_data = json.dumps(coap_data)
+    coap_client.post(coap_path, payload=coap_data)
 
 async def notify(client):
-    def keypress_handler(sender, data):
-        print(f'Received in BLE: {data}')
     await client.start_notify(BUTTON_UUID, keypress_handler)
     while True:
         await asyncio.sleep(0.1)
@@ -38,20 +58,8 @@ async def run(client):
         if not client.is_connected:
             print("Connection lost, trying again...")
             await client.connect()
+            await client.start_notify(BUTTON_UUID, keypress_handler)
             print("Connected!")
-        
-        # await asyncio.sleep(2.0)
-        # switchState = await client.read_gatt_char(LED_UUID)
-        # switchState = switchState.decode('utf-8')
-        # if switchState == "0":
-        #     value = bytearray(b'1')
-        #     # value = value.extend(map(ord, "1"))
-        # else:
-        #     value = bytearray(b'0')
-            # value = value.extend(map(ord, "0"))
-        # await client.write_gatt_char(LED_UUID, value)
-        # vx = v1 + " " + v2 + " " + v3 + " " + v4 + " " + v5
-
         if len(esp_payload) > 0:
             print(f'Message: {esp_payload}')
             await client.write_gatt_char(LED_UUID, bytearray(esp_payload, "utf-8"))
@@ -75,13 +83,15 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    global esp_payload
+    global esp_payload, req_type
     #print(msg.topic+" "+str(msg.payload))
     data = json.loads(msg.payload)
     if data["method"] == "scan":
+        req_type = "scan"
         d = "s"
         esp_payload = d + " " + " ".join([str(s) for s in data["params"].values()])
     else:
+        req_type = "fetch"
         d = "f"
         v = ""
         vals = list(data["params"].values())
