@@ -48,7 +48,7 @@ unsigned char medical_camp_map[SIZE][SIZE];
 
 unsigned char turned[SIZE][SIZE];
 
-long long int TimeCounter = 0L;
+double TimeCounter = 0.0;
 
 
 //---------------------------------- FUNCTIONS ----------------------------------
@@ -74,7 +74,7 @@ void readSensor(void)
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	TimeCounter++;
+	TimeCounter += 0.01;
 	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -106,11 +106,6 @@ void forward_wls(unsigned char node)
 			}
 			else if (left_wl_sensor_data > 200 && center_wl_sensor_data > 200 && right_wl_sensor_data > 200)
 			{ // BBB
-				printf("Intersection Reached\n");
-				forward();
-				velocity(200, 200);
-				_delay_ms(125);
-				stop();
 				if (dir_flag == NORTH)
 					curr_loc.x--;
 				else if (dir_flag == SOUTH)
@@ -119,7 +114,11 @@ void forward_wls(unsigned char node)
 					curr_loc.y--;
 				else
 					curr_loc.y++;
-				printf("Current: (%d, %d)\n", curr_loc.x, curr_loc.y);
+				printf("\nIntersection Reached. Current: (%d, %d)\n", curr_loc.x, curr_loc.y);
+				forward();
+				velocity(200, 200);
+				_delay_ms(125);
+				stop();
 				break;
 			}
 			else
@@ -173,7 +172,7 @@ void left_turn_wls(void)
 	int timer = 0;
 	left();
 	_delay_ms(100);
-	velocity(20, 20);
+	velocity(100, 100);
 	while (1)
 	{
 		timer++;
@@ -186,7 +185,7 @@ void left_turn_wls(void)
 		_delay_ms(10);
 	}
 	printf("timer = %d\n", timer);
-	for (unsigned char i = 0; i <= timer / 180; i++)
+	for (unsigned char i = 0; i <= timer / 40; i++)
 	{
 		if (dir_flag == NORTH)
 			dir_flag = WEST;
@@ -216,7 +215,7 @@ void right_turn_wls(void)
 	int timer = 0;
 	right();
 	_delay_ms(100);
-	velocity(20, 20);
+	velocity(100, 100);
 	while (1)
 	{
 		timer++;
@@ -229,7 +228,7 @@ void right_turn_wls(void)
 		_delay_ms(10);
 	}
 	printf("Timer = %d\n", timer);
-	for (unsigned char i = 0; i <= timer / 180; i++)
+	for (unsigned char i = 0; i <= timer / 40; i++)
 	{
 		if (dir_flag == NORTH)
 			dir_flag = EAST;
@@ -463,7 +462,7 @@ unsigned char is_mid_node(Point &node) {
 	return 0;
 }
 
-char not_satisfied = 1;
+char request_no = 0;
 void serve_request(void);
 
 unsigned char move(Point &source, Point &destination) {
@@ -492,8 +491,9 @@ unsigned char move(Point &source, Point &destination) {
 	if(is_mid_node(destination))
 		check_plot();
 
-	if(TimeCounter > 3000 && not_satisfied) {
-		not_satisfied = 0;
+	if(TimeCounter > 20.0) {
+		TimeCounter = 0.0;
+		request_no++;
 		serve_request();
 	}
 
@@ -578,6 +578,8 @@ unsigned char traverse_line_to_goal(unsigned char search_char) {
 			temp = parent[temp.x][temp.y];
 		}
 
+
+
 		temp = Stack.top();
 		Stack.pop();
 		while(!Stack.empty()) {
@@ -622,40 +624,92 @@ void print_all_result(void) {
 	}
 }
 
-void scan(unsigned char plot_no) {
-	Point cords = get_cords(plot_no);
+void scan(unsigned char plot, unsigned char completeIn) {
+	printf("\nIdentify Survivor at plot %d in %d seconds\n", plot, completeIn);
+	Point cords = get_cords(plot);
 	medical_camp_map[cords.x][cords.y] = SCAN;
 	while(traverse_line_to_goal(SCAN) == 2);
 }
 
-void fetch(unsigned char search_char) {
+void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
+	if(search_char == 'R')
+		printf("\nFetch nearest RED survivor in %d seconds\n", completeIn);
+	else
+		printf("\nFetch nearest GREEN survivor in %d seconds\n", completeIn);
 	while(traverse_line_to_goal(search_char) == 2);
-	_delay_ms(10000);
 }
 
 void serve_request(void) {
 
-	// Scan Request
 	_delay_ms(2000);
-	printf("Identify Survivor at plot 3\n");
-	scan(3);
 
-	_delay_ms(2000);
-	printf("Fetch GREEN Survivor\n");
-	fetch(GREEN);
+	if(request_no == 1) {
+		// Scan Request
+		scan(13, 40);
+	}
+	else if(request_no == 2) {
+		// Fetch Request
+		fetch_nearest(GREEN, 10);
+	}
+	else if(request_no == 3) {
+		// Scan Request
+		scan(11, 30);
+	}
+	else if(request_no == 4) {
+		// Fetch Request
+		fetch_nearest(RED, 10);
+	}
+	else if(request_no == 5) {
+		// Scan Request
+		scan(1, 40);
+	}
+	else if(request_no == 6) {
+		// Fetch Request
+		fetch_nearest(GREEN, 10);
+	}
+	else if(request_no == 7) {
+		// Scan Request
+		scan(4, 30);
+	}
+	else if(request_no == 8) {
+		// Fetch Request
+		fetch_nearest(RED, 10);
+	}
+	else if(request_no == 9) {
+		// Scan Request
+		scan(15, 40);
+	}
+	else if(request_no == 10) {
+		// Fetch Request
+		fetch_nearest(GREEN, 10);
+	}
+	else if(request_no == 11) {
+		// Scan Request
+		scan(2, 30);
+	}
+	else if(request_no == 12) {
+		// Fetch Request
+		fetch_nearest(RED, 10);
+	}
+	else if(request_no == 13) {
+		// Scan Request
+		scan(3, 40);
+	}
+
 }
 
 void path_planning(void)
 {
+
 	initialize_medical_camp_map();
 
 	forward_wls(1);
 
 	scan_arena(DESTINATION);
 
-	traverse_to_medical_camp();
+	TimeCounter = -20000;
 
-	printf("TimeCounter = %lld\n", TimeCounter);
+	traverse_to_medical_camp();
 
 	print_all_result();
 
