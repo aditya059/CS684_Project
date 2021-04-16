@@ -4,7 +4,7 @@ import time
 import requests
 
 
-TIME=45
+TIME=5
 DEVICE_ID = "9dd9bca0-809f-11eb-950e-efef5c07c810"
 JWT_TOKEN = ""
 BASE = 'https://thingsboard.e-yantra.org/api'
