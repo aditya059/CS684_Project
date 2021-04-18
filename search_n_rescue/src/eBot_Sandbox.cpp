@@ -745,14 +745,14 @@ void serve_request(void) {
 	}
 	else if(request_no == 2) {
 		// Fetch Request
-		fetch_nearest(GREEN, 50);
+		fetch_nearest(RED, 10);
 	}
 	else if(request_no == 3) {
 		// Empty Request
 	}
 	else if(request_no == 4) {
 		// Fetch Request
-		fetch_nearest(RED, 10);
+		fetch_nearest(GREEN, 10);
 	}
 	else if(request_no == 5) {
 		// Scan Request
