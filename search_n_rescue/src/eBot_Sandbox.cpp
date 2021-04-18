@@ -21,13 +21,15 @@
 #define GREEN 'G'
 #define RED 'R'
 
-#define SCAN 'S'
+#define SCAN 'S'                       				// Search char for scan request
 
-#define DESTINATION 'D'
+#define DESTINATION 'D'								// Search char for scanning arena
 
-#define TIME_TO_COVER_1_LINE 2
+#define TIME_TO_COVER_1_LINE 2         				// 2 sec
 
-#define TIME_INTERVAL_BETWEEN_EACH_REQUEST 20
+#define TIME_INTERVAL_BETWEEN_EACH_REQUEST 45 		// Each request received after 45 sec
+
+#define APPROX_FACTOR 3.5                      		// Used to approximate actual time in simulation
 
 using namespace std;
 
@@ -48,24 +50,58 @@ Point curr_loc = {9, 4}, med_loc = {4, 8};
 // To store the direction in which eBot is currently facing
 unsigned char dir_flag = NORTH;
 
+// To store arena seen so far
 unsigned char medical_camp_map[SIZE][SIZE];
 
+// To store whether bot has already turned or not at corner nodes
 unsigned char turned[SIZE][SIZE];
 
+// To count completion of 45 sec
 double TimeCounter = 0.0;
 
-double TimeRemaining;
+// To store time remaining for satisfying a request
+double TimeRemaining = 0.0;
 
+// To compute total time expired in simulation
+double TotalTimeExpired = 0.0;
+
+// To store current received request number
 unsigned char request_no = 0;
 
+// Used for storing shortest path
 stack<Point> Stack;
 
 
 //---------------------------------- FUNCTIONS ----------------------------------
 
 /**
- * @brief      Executes the logic to achieve the aim of Lab 3
+ * @brief      Executes the logic to achieve the aim of Project
  */
+
+// For serving requests
+void serve_request(void);
+
+// To compute time
+void compute_time(unsigned int ms) {
+	TimeCounter += (ms / 1000.0) * APPROX_FACTOR;          	// To count time in sec. Used for counting 45 sec
+	TimeRemaining -= (ms / 1000.0) * APPROX_FACTOR;			// To compute remaining time for request in sec
+	TotalTimeExpired += (ms / 1000.0) * APPROX_FACTOR;  	// To compute total time for simulation
+}
+
+// To give delay as well as compute time elapsed
+void ms_delay_and_compute_time(unsigned int ms) {
+	_delay_ms(ms);
+	compute_time(ms);
+}
+
+// To read Sensor values
+void readSensor(void)
+{
+	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
+	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
+	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
+	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
+}
 
 
 /*
@@ -77,20 +113,6 @@ stack<Point> Stack;
 * Example Call: forward_wls(2); //Goes forward by two nodes
 *
 */
-//
-
-void serve_request(void);
-
-void readSensor(void)
-{
-	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
-	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
-	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
-	TimeCounter += 0.01;
-	TimeRemaining -= 0.01;
-	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
-}
-
 void forward_wls(unsigned char node)
 {
 	for (unsigned char i = 0; i < node; i++)
@@ -127,10 +149,10 @@ void forward_wls(unsigned char node)
 					curr_loc.y--;
 				else
 					curr_loc.y++;
-				printf("\nIntersection Reached. Current: (%d, %d)\n", curr_loc.x, curr_loc.y);
+				printf("\nIntersection Reached. Current: (%d, %d). Direction: %c\n", curr_loc.x, curr_loc.y, dir_flag);
 				forward();
 				velocity(200, 200);
-				_delay_ms(125);
+				ms_delay_and_compute_time(125);
 				stop();
 				break;
 			}
@@ -156,7 +178,7 @@ void forward_wls(unsigned char node)
 					left();
 					velocity(20, 20);
 				}
-				_delay_ms(s * 5);
+				ms_delay_and_compute_time(s * 5);
 				if (t % 4 == 3)
 					s *= 2;
 				t++;
@@ -164,7 +186,7 @@ void forward_wls(unsigned char node)
 			}
 			t = 0;
 			s = 1;
-			_delay_ms(10);
+			ms_delay_and_compute_time(10);
 		}
 	}
 }
@@ -184,7 +206,7 @@ void left_turn_wls(void)
 	printf("Initial Direction = %c\n", dir_flag);
 	int timer = 0;
 	left();
-	_delay_ms(100);
+	ms_delay_and_compute_time(100);
 	velocity(100, 100);
 	while (1)
 	{
@@ -195,7 +217,7 @@ void left_turn_wls(void)
 			stop();
 			break;
 		}
-		_delay_ms(10);
+		ms_delay_and_compute_time(10);
 	}
 	printf("timer = %d\n", timer);
 	for (unsigned char i = 0; i <= timer / 40; i++)
@@ -227,7 +249,7 @@ void right_turn_wls(void)
 	printf("Initial Direction = %c\n", dir_flag);
 	int timer = 0;
 	right();
-	_delay_ms(100);
+	ms_delay_and_compute_time(100);
 	velocity(100, 100);
 	while (1)
 	{
@@ -238,7 +260,7 @@ void right_turn_wls(void)
 			stop();
 			break;
 		}
-		_delay_ms(10);
+		ms_delay_and_compute_time(10);
 	}
 	printf("Timer = %d\n", timer);
 	for (unsigned char i = 0; i <= timer / 40; i++)
@@ -374,6 +396,7 @@ void store_and_print_injury_type(int x, int y) {
 	unsigned char plot_no = 4 * (x / 2) + (y / 2) + 1;
 
 	medical_camp_map[x][y] = read_color_sensor_data();
+	compute_time(1500);        // read_color_sensor_data gives delay of 1500 ms
 
 	if(medical_camp_map[x][y] == GREEN)
 		printf("\n\nPlot No. = %d - MinorInjury\n\n\n", plot_no);
@@ -491,6 +514,7 @@ void print_all_result(void) {
 			}
 		}
 	}
+	printf("\nTotal Time used for simulation = %f sec\n", TotalTimeExpired);
 }
 
 unsigned char move(Point &source, Point &destination) {
@@ -653,6 +677,8 @@ void traverse_to_medical_camp(void) {
 
 void scan(unsigned char plot, unsigned char completeIn) {
 	printf("\nIdentify Survivor at plot %d in %d seconds\n", plot, completeIn);
+
+	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
 
 	TimeRemaining = completeIn;
@@ -681,6 +707,8 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 		printf("\nFetch nearest RED survivor in %d seconds\n", completeIn);
 	else
 		printf("\nFetch nearest GREEN survivor in %d seconds\n", completeIn);
+
+	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
 
 	TimeRemaining = completeIn;
@@ -691,7 +719,7 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 			if(traverse_line_to_goal() == 1) {
 				reached = 1;
 				printf("\nRequest Satisfied. Buzz the Buzzer\n");
-				_delay_ms(1000);
+				ms_delay_and_compute_time(1000);
 				break;
 			}
 		}
@@ -767,7 +795,7 @@ void path_planning(void)
 
 	scan_arena();
 
-	//TimeCounter = -20000.0;
+	TimeCounter = -20000.0;  // Any big negative value so that after arena scan, bot don't wait for more request and just go to medical camp
 
 	traverse_to_medical_camp();
 
