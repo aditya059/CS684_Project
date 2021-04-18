@@ -25,11 +25,11 @@
 
 #define DESTINATION 'D'								// Search char for scanning arena
 
-#define TIME_TO_COVER_1_LINE 2         				// 2 sec
+#define TIME_TO_COVER_1_LINE_AND_TURN 2         				// 2 sec
 
 #define TIME_INTERVAL_BETWEEN_EACH_REQUEST 45 		// Each request received after 45 sec
 
-#define APPROX_FACTOR 3.5                      		// Used to approximate actual time in simulation
+#define APPROX_FACTOR 1.76                      		// Used to approximate actual time in simulation
 
 using namespace std;
 
@@ -67,6 +67,9 @@ double TotalTimeExpired = 0.0;
 
 // To store current received request number
 unsigned char request_no = 0;
+
+// To store number of request satisfied
+unsigned char satisfied = 0;
 
 // Used for storing shortest path
 stack<Point> Stack;
@@ -149,7 +152,7 @@ void forward_wls(unsigned char node)
 					curr_loc.y--;
 				else
 					curr_loc.y++;
-				printf("\nIntersection Reached. Current: (%d, %d). Direction: %c\n", curr_loc.x, curr_loc.y, dir_flag);
+				//printf("\nIntersection Reached. Current: (%d, %d). Direction: %c\n", curr_loc.x, curr_loc.y, dir_flag);
 				forward();
 				velocity(200, 200);
 				ms_delay_and_compute_time(125);
@@ -202,8 +205,8 @@ void forward_wls(unsigned char node)
 */
 void left_turn_wls(void)
 {
-	printf("Left Turn\n");
-	printf("Initial Direction = %c\n", dir_flag);
+	//printf("Left Turn\n");
+	//printf("Initial Direction = %c\n", dir_flag);
 	int timer = 0;
 	left();
 	ms_delay_and_compute_time(100);
@@ -219,7 +222,7 @@ void left_turn_wls(void)
 		}
 		ms_delay_and_compute_time(10);
 	}
-	printf("timer = %d\n", timer);
+	//printf("timer = %d\n", timer);
 	for (unsigned char i = 0; i <= timer / 40; i++)
 	{
 		if (dir_flag == NORTH)
@@ -231,7 +234,7 @@ void left_turn_wls(void)
 		else
 			dir_flag = NORTH;
 	}
-	printf("Final Direction = %c\n\n", dir_flag);
+	//printf("Final Direction = %c\n\n", dir_flag);
 }
 
 /*
@@ -245,8 +248,8 @@ void left_turn_wls(void)
 */
 void right_turn_wls(void)
 {
-	printf("Right Turn\n");
-	printf("Initial Direction = %c\n", dir_flag);
+	//printf("Right Turn\n");
+	//printf("Initial Direction = %c\n", dir_flag);
 	int timer = 0;
 	right();
 	ms_delay_and_compute_time(100);
@@ -262,7 +265,7 @@ void right_turn_wls(void)
 		}
 		ms_delay_and_compute_time(10);
 	}
-	printf("Timer = %d\n", timer);
+	//printf("Timer = %d\n", timer);
 	for (unsigned char i = 0; i <= timer / 40; i++)
 	{
 		if (dir_flag == NORTH)
@@ -274,7 +277,7 @@ void right_turn_wls(void)
 		else
 			dir_flag = SOUTH;
 	}
-	printf("Final Direction = %c\n\n", dir_flag);
+	//printf("Final Direction = %c\n\n", dir_flag);
 }
 
 unsigned char turn_west(void) {           // turn west if possible and return 1, otherwise return 0
@@ -515,6 +518,8 @@ void print_all_result(void) {
 		}
 	}
 	printf("\nTotal Time used for simulation = %f sec\n", TotalTimeExpired);
+	printf("\nNo. of Request Received = %d\n", request_no);
+	printf("\nNo. of Request satisfied = %d\n", satisfied);
 }
 
 unsigned char move(Point &source, Point &destination) {
@@ -623,7 +628,7 @@ unsigned char bfs(unsigned char search_char) {
 		Stack.push(temp);
 		temp = parent[temp.x][temp.y];
 	}
-	printf("Source = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", curr_loc.x, curr_loc.y, destination.x, destination.y, dir_flag);
+	//printf("\nSource = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", curr_loc.x, curr_loc.y, destination.x, destination.y, dir_flag);
 	return Stack.size();
 }
 
@@ -676,7 +681,7 @@ void traverse_to_medical_camp(void) {
 }
 
 void scan(unsigned char plot, unsigned char completeIn) {
-	printf("\nIdentify Survivor at plot %d in %d seconds\n", plot, completeIn);
+	printf("\nRequest No. %d : Identify Survivor at plot %d in %d seconds\n", request_no, plot, completeIn);
 
 	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
@@ -687,26 +692,27 @@ void scan(unsigned char plot, unsigned char completeIn) {
 	medical_camp_map[cords.x][cords.y] = SCAN;
 	unsigned char reached = 0;
 
-	while((bfs(SCAN) - 1) * TIME_TO_COVER_1_LINE < TimeRemaining - 10) {
+	while((bfs(SCAN) - 1) * TIME_TO_COVER_1_LINE_AND_TURN <= TimeRemaining - 5) {
 		if(traverse_line_to_goal() == 1) {
 			reached = 1;
-			printf("\nRequest Satisfied. Buzz the Buzzer\n");
+			satisfied++;
+			printf("\nRequest No. %d Satisfied. Buzz the Buzzer\n", request_no);
 			break;
 		}
 	}
 
 	if(!reached) {
 		medical_camp_map[cords.x][cords.y] = prev_value;
-		printf("\nRequest Not Satisfied\n");
+		printf("\nRequest No. %d Not Satisfied\n", request_no);
 	}
 
 }
 
 void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 	if(search_char == 'R')
-		printf("\nFetch nearest RED survivor in %d seconds\n", completeIn);
+		printf("\nRequest No. %d : Fetch nearest RED survivor in %d seconds\n", request_no, completeIn);
 	else
-		printf("\nFetch nearest GREEN survivor in %d seconds\n", completeIn);
+		printf("\nRequest No. %d : Fetch nearest GREEN survivor in %d seconds\n", request_no, completeIn);
 
 	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
@@ -715,17 +721,18 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 
 	unsigned char reached = 0;
 	if(bfs(search_char)) {
-		while((bfs(search_char) - 1) * TIME_TO_COVER_1_LINE < TimeRemaining - 10) {
+		while((bfs(search_char) - 1) * TIME_TO_COVER_1_LINE_AND_TURN <= TimeRemaining - 5) {
 			if(traverse_line_to_goal() == 1) {
 				reached = 1;
-				printf("\nRequest Satisfied. Buzz the Buzzer\n");
+				satisfied++;
+				printf("\nRequest No. %d Satisfied. Buzz the Buzzer\n", request_no);
 				ms_delay_and_compute_time(1000);
 				break;
 			}
 		}
 	}
 	if(!reached) {
-		printf("\nRequest Not Satisfied\n");
+		printf("\nRequest No. %d Not Satisfied\n", request_no);
 	}
 
 }
