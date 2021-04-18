@@ -25,6 +25,10 @@
 
 #define DESTINATION 'D'
 
+#define TIME_TO_COVER_1_LINE 2
+
+#define TIME_INTERVAL_BETWEEN_EACH_REQUEST 20
+
 using namespace std;
 
 //------------------------------ GLOBAL VARIABLES -------------------------------
@@ -50,6 +54,12 @@ unsigned char turned[SIZE][SIZE];
 
 double TimeCounter = 0.0;
 
+double TimeRemaining;
+
+unsigned char request_no = 0;
+
+stack<Point> Stack;
+
 
 //---------------------------------- FUNCTIONS ----------------------------------
 
@@ -69,12 +79,15 @@ double TimeCounter = 0.0;
 */
 //
 
+void serve_request(void);
+
 void readSensor(void)
 {
 	left_wl_sensor_data = convert_analog_channel_data(left_wl_sensor_channel);
 	center_wl_sensor_data = convert_analog_channel_data(center_wl_sensor_channel);
 	right_wl_sensor_data = convert_analog_channel_data(right_wl_sensor_channel);
 	TimeCounter += 0.01;
+	TimeRemaining -= 0.01;
 	//printf("L = %d C = %d R = %d\n", left_wl_sensor_data, center_wl_sensor_data, right_wl_sensor_data);
 }
 
@@ -462,8 +475,23 @@ unsigned char is_mid_node(Point &node) {
 	return 0;
 }
 
-char request_no = 0;
-void serve_request(void);
+void print_all_result(void) {
+	printf("\n\n");
+	unsigned char plot_no = 0;
+	for(int i = 0; i < SIZE; i++) {
+		for(int j = 0; j < SIZE; j++) {
+			if(i % 2 == 1 && j % 2 == 1) {
+				plot_no++;
+				if(medical_camp_map[i][j] == GREEN)
+					printf("%d - MinorInjury\n", plot_no);
+				else if(medical_camp_map[i][j] == RED)
+					printf("%d - MajorInjury\n", plot_no);
+				else
+					printf("%d - \n", plot_no);
+			}
+		}
+	}
+}
 
 unsigned char move(Point &source, Point &destination) {
 
@@ -491,12 +519,6 @@ unsigned char move(Point &source, Point &destination) {
 	if(is_mid_node(destination))
 		check_plot();
 
-	if(TimeCounter > 20.0) {
-		TimeCounter = 0.0;
-		request_no++;
-		serve_request();
-	}
-
 	return 1;
 }
 
@@ -507,7 +529,7 @@ unsigned char move(Point &source, Point &destination) {
  *               'S' for scan request
 */
 // Reference : https://www.geeksforgeeks.org/shortest-distance-two-cells-matrix-grid/
-unsigned char traverse_line_to_goal(unsigned char search_char) {
+unsigned char bfs(unsigned char search_char) {
 
 	unsigned char visited[SIZE][SIZE];
 	Point parent[SIZE][SIZE];
@@ -568,67 +590,90 @@ unsigned char traverse_line_to_goal(unsigned char search_char) {
 		}
 	}
 
-	printf("Source = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", curr_loc.x, curr_loc.y, destination.x, destination.y, dir_flag);
+	if(!is_found)
+		return 0;
 
-	if(is_found) {
-		stack<Point> Stack;
-		Point temp = destination;
-		while(temp.x != -1 && temp.y != -1) {
-			Stack.push(temp);
-			temp = parent[temp.x][temp.y];
-		}
-
-
-
-		temp = Stack.top();
-		Stack.pop();
-		while(!Stack.empty()) {
-			Point temp1 = Stack.top();
-			Stack.pop();
-			if(!move(temp, temp1))
-				return 2;
-			temp = temp1;
-		}
+	Stack = stack<Point>();
+	Point temp = destination;
+	while(temp.x != -1 && temp.y != -1) {
+		Stack.push(temp);
+		temp = parent[temp.x][temp.y];
 	}
-
-	return is_found;
+	printf("Source = {%d, %d}, Destination = {%d, %d}, Direction = %c\n", curr_loc.x, curr_loc.y, destination.x, destination.y, dir_flag);
+	return Stack.size();
 }
 
-void scan_arena(unsigned char search_char) {
-	while(traverse_line_to_goal(search_char));
+unsigned char traverse_line_to_goal() {
+
+	Point temp = Stack.top();
+	Stack.pop();
+	while(!Stack.empty()) {
+
+		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {
+			printf("\n%d sec expired. New Request might come\n", TIME_INTERVAL_BETWEEN_EACH_REQUEST);
+			TimeCounter = 0.0;
+			request_no++;
+			return 0;
+		}
+
+		Point temp1 = Stack.top();
+		Stack.pop();
+		if(!move(temp, temp1)) {
+			return 2;
+		}
+		temp = temp1;
+
+		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {
+			printf("\n%d sec expired. New Request might come\n", TIME_INTERVAL_BETWEEN_EACH_REQUEST);
+			TimeCounter = 0.0;
+			request_no++;
+			return 0;
+		}
+
+	}
+
+	return 1;
+}
+
+void scan_arena(void) {
+	while(bfs(DESTINATION)) {
+		if(!traverse_line_to_goal()) {
+			serve_request();
+		}
+	}
 }
 
 void traverse_to_medical_camp(void) {
 	medical_camp_map[med_loc.x][med_loc.y] = DESTINATION;
-	while(traverse_line_to_goal(DESTINATION) == 2);
+	while(bfs(DESTINATION) && traverse_line_to_goal() == 2);
 	move(curr_loc, med_loc);
 	turn_east();
 	forward_wls(1);
 }
 
-void print_all_result(void) {
-	printf("\n\n");
-	unsigned char plot_no = 0;
-	for(int i = 0; i < SIZE; i++) {
-		for(int j = 0; j < SIZE; j++) {
-			if(i % 2 == 1 && j % 2 == 1) {
-				plot_no++;
-				if(medical_camp_map[i][j] == GREEN)
-					printf("%d - MinorInjury\n", plot_no);
-				else if(medical_camp_map[i][j] == RED)
-					printf("%d - MajorInjury\n", plot_no);
-				else
-					printf("%d - \n", plot_no);
-			}
-		}
-	}
-}
-
 void scan(unsigned char plot, unsigned char completeIn) {
 	printf("\nIdentify Survivor at plot %d in %d seconds\n", plot, completeIn);
+	_delay_ms(2000);
+
+	TimeRemaining = completeIn;
 	Point cords = get_cords(plot);
+	unsigned char prev_value = medical_camp_map[cords.x][cords.y];
 	medical_camp_map[cords.x][cords.y] = SCAN;
-	while(traverse_line_to_goal(SCAN) == 2);
+	unsigned char reached = 0;
+
+	while((bfs(SCAN) - 1) * TIME_TO_COVER_1_LINE < TimeRemaining - 10) {
+		if(traverse_line_to_goal() == 1) {
+			reached = 1;
+			printf("\nRequest Satisfied. Buzz the Buzzer\n");
+			break;
+		}
+	}
+
+	if(!reached) {
+		medical_camp_map[cords.x][cords.y] = prev_value;
+		printf("\nRequest Not Satisfied\n");
+	}
+
 }
 
 void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
@@ -636,12 +681,28 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 		printf("\nFetch nearest RED survivor in %d seconds\n", completeIn);
 	else
 		printf("\nFetch nearest GREEN survivor in %d seconds\n", completeIn);
-	while(traverse_line_to_goal(search_char) == 2);
+	_delay_ms(2000);
+
+	TimeRemaining = completeIn;
+
+	unsigned char reached = 0;
+	if(bfs(search_char)) {
+		while((bfs(search_char) - 1) * TIME_TO_COVER_1_LINE < TimeRemaining - 10) {
+			if(traverse_line_to_goal() == 1) {
+				reached = 1;
+				printf("\nRequest Satisfied. Buzz the Buzzer\n");
+				_delay_ms(1000);
+				break;
+			}
+		}
+	}
+	if(!reached) {
+		printf("\nRequest Not Satisfied\n");
+	}
+
 }
 
 void serve_request(void) {
-
-	_delay_ms(2000);
 
 	if(request_no == 1) {
 		// Scan Request
@@ -649,11 +710,10 @@ void serve_request(void) {
 	}
 	else if(request_no == 2) {
 		// Fetch Request
-		fetch_nearest(GREEN, 10);
+		fetch_nearest(GREEN, 50);
 	}
 	else if(request_no == 3) {
-		// Scan Request
-		scan(11, 30);
+		// Empty Request
 	}
 	else if(request_no == 4) {
 		// Fetch Request
@@ -705,9 +765,9 @@ void path_planning(void)
 
 	forward_wls(1);
 
-	scan_arena(DESTINATION);
+	scan_arena();
 
-	TimeCounter = -20000;
+	//TimeCounter = -20000.0;
 
 	traverse_to_medical_camp();
 

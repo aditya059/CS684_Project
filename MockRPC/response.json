@@ -1,0 +1,27 @@
+[
+    {
+        "id": 2415498415,
+        "plot": 3,
+        "timeTaken": 7
+    },
+    {
+        "id": 65318,
+        "type": "minorInjury",
+        "timeTaken": 35
+    },
+    {
+        "id": 984546,
+        "plot": 7,
+        "timeTaken": 11
+    },
+    {
+        "id": 75454152,
+        "type": "majorInjury",
+        "timeTaken": 15
+    },
+    {
+        "id": 516584,
+        "type": "",
+        "timeTaken": 17
+    }
+]
