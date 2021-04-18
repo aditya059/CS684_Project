@@ -25,11 +25,11 @@
 
 #define DESTINATION 'D'								// Search char for scanning arena
 
-#define TIME_TO_COVER_1_LINE_AND_TURN 2         				// 2 sec
+#define TIME_TO_COVER_1_LINE_AND_TURN 2         	// 2 sec
 
 #define TIME_INTERVAL_BETWEEN_EACH_REQUEST 45 		// Each request received after 45 sec
 
-#define APPROX_FACTOR 1.76                      		// Used to approximate actual time in simulation
+#define APPROX_FACTOR 1.76                      	// Used to approximate real life time in simulation
 
 using namespace std;
 
@@ -159,6 +159,7 @@ void forward_wls(unsigned char node)
 				stop();
 				break;
 			}
+			// The bot will turn left,then back to original position, then right and again back to original position at some angle until it find black line
 			else
 			{	 // WWW or any other reading
 				if (t % 4 == 0)
@@ -207,7 +208,7 @@ void left_turn_wls(void)
 {
 	//printf("Left Turn\n");
 	//printf("Initial Direction = %c\n", dir_flag);
-	int timer = 0;
+	int timer = 0;                      // Used to find direction by counting delays of 10 ms
 	left();
 	ms_delay_and_compute_time(100);
 	velocity(100, 100);
@@ -250,7 +251,7 @@ void right_turn_wls(void)
 {
 	//printf("Right Turn\n");
 	//printf("Initial Direction = %c\n", dir_flag);
-	int timer = 0;
+	int timer = 0;						 // Used to find direction by counting delays of 10 ms
 	right();
 	ms_delay_and_compute_time(100);
 	velocity(100, 100);
@@ -280,7 +281,8 @@ void right_turn_wls(void)
 	//printf("Final Direction = %c\n\n", dir_flag);
 }
 
-unsigned char turn_west(void) {           // turn west if possible and return 1, otherwise return 0
+// turn west if possible and return 1, otherwise return 0
+unsigned char turn_west(void) {
 	if(dir_flag == NORTH) {
 		left_turn_wls();
 	}
@@ -299,7 +301,8 @@ unsigned char turn_west(void) {           // turn west if possible and return 1,
 	return 0;
 }
 
-unsigned char turn_east(void) {		// turn east if possible and return 1, otherwise return 0
+// turn east if possible and return 1, otherwise return 0
+unsigned char turn_east(void) {
 	if(dir_flag == NORTH) {
 		right_turn_wls();
 	}
@@ -318,7 +321,8 @@ unsigned char turn_east(void) {		// turn east if possible and return 1, otherwis
 	return 0;
 }
 
-unsigned char turn_north(void) {		// turn north if possible and return 1, otherwise return 0
+// turn north if possible and return 1, otherwise return 0
+unsigned char turn_north(void) {
 	if(dir_flag == EAST) {
 		left_turn_wls();
 	}
@@ -337,7 +341,8 @@ unsigned char turn_north(void) {		// turn north if possible and return 1, otherw
 	return 0;
 }
 
-unsigned char turn_south(void) {		 // turn south if possible and return 1, otherwise return 0
+// turn south if possible and return 1, otherwise return 0
+unsigned char turn_south(void) {
 	if(dir_flag == EAST) {
 		right_turn_wls();
 	}
@@ -356,6 +361,7 @@ unsigned char turn_south(void) {		 // turn south if possible and return 1, other
 	return 0;
 }
 
+// Takes plot no. as input and return its coordinate
 Point get_cords(unsigned char plot_no)
 {
 	unsigned char plots_x[] = {8, 6, 4, 2}, plots_y[] = {7, 1, 3, 5};
@@ -366,12 +372,13 @@ Point get_cords(unsigned char plot_no)
 	return cords;
 }
 
+// Used to initialise the arena in form of 2D Matrix
 void initialize_medical_camp_map(void) {
 
 	for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
-			medical_camp_map[i][j] = 1;
-			turned[i][j] = 0;
+			medical_camp_map[i][j] = 1;         // Initially bot has not seen arena so we fill everything with 1. 1 indicate that there is path and bot can move there. 0 will indicate obstacle
+			turned[i][j] = 0;					// Stores 0 to indicate that bot has not turned there to check paths in every direction. 1 will indicate that bot has turned and already checked all directions
 		}
 	}
 
@@ -379,21 +386,23 @@ void initialize_medical_camp_map(void) {
 	for (unsigned char i = 1; i <= NO_OF_PLOTS; i++)
 	{
 		cords = get_cords(i);
-		medical_camp_map[cords.x][cords.y] = DESTINATION;
+		medical_camp_map[cords.x][cords.y] = DESTINATION;     // The cells of 2D array which represent plot is filled with DESTINATION symbol which will be used for bfs search
 	}
 
 }
 
+// To check whether plot had been checked earlier or not
 unsigned char plot_not_checked(int x, int y) {
 
 	if(x < 0 || x >= SIZE || y < 0 || y >= SIZE)          // Invalid coordinate
 		return 0;
 
-	if(medical_camp_map[x][y] == DESTINATION || medical_camp_map[x][y] == SCAN)
+	if(medical_camp_map[x][y] == DESTINATION || medical_camp_map[x][y] == SCAN)     // Plot will be checked only when it stores SCAN or DESTINATION.
 		return 1;
 	return 0;
 }
 
+// Read the type of injury through color sensor and store in arena's 2D Matrix representation
 void store_and_print_injury_type(int x, int y) {
 
 	unsigned char plot_no = 4 * (x / 2) + (y / 2) + 1;
@@ -409,6 +418,7 @@ void store_and_print_injury_type(int x, int y) {
 		printf("\n\nPlot No. = %d - NoInjury\n\n\n", plot_no);
 }
 
+// Check plot if not checked earlier. Plot on left side of bot can be checked directly. For right side plot bot had to turn 180 degrees
 void check_plot(void) {
 	if(dir_flag == NORTH) {
 		if(plot_not_checked(curr_loc.x, curr_loc.y - 1)) {
@@ -448,6 +458,7 @@ void check_plot(void) {
 	}
 }
 
+// Check whether front direction is free or blocked by debris (indicated as WWW by color sensor)
 unsigned char check_front(void) {
 	readSensor();
 	if(left_wl_sensor_data < 50 && center_wl_sensor_data < 50 && right_wl_sensor_data < 50) {
@@ -456,51 +467,54 @@ unsigned char check_front(void) {
 	return 1;
 }
 
+// Check all possible paths at corner nodes so that we can compute arena's 2D Matrix representation quickly which will later help in finding path efficiently and quickly by bfs
 void check_path_possible(int x, int y) {
 	if(turned[x][y])										// Has already turned before to check all valid paths
 		return;
 	turned[x][y] = 1;
 
-	if(dir_flag == NORTH) {
+	if(dir_flag == NORTH) {                                     // If bot has come facing north so south exist. No need to check
 		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
-			medical_camp_map[x - 1][y] = check_front();
+			medical_camp_map[x - 1][y] = check_front();			// Check for path in north direction. If debris then fill 0 in corresponding cell of 2D arena representation
+		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
+			medical_camp_map[x][y - 1] = turn_west();			// Check for path in west direction. If debris then fill 0 in corresponding cell of 2D arena representation
+		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
+			medical_camp_map[x][y + 1] = turn_east();			// Check for path in east direction. If debris then fill 0 in corresponding cell of 2D arena representation
+	}
+	else if(dir_flag == SOUTH) {								// If bot has come facing south so north exist. No need to check
+		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
+			medical_camp_map[x + 1][y] = check_front();			// Check for path in south direction. If debris then fill 0 in corresponding cell of 2D arena representation
 		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
 			medical_camp_map[x][y - 1] = turn_west();
 		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
 			medical_camp_map[x][y + 1] = turn_east();
 	}
-	else if(dir_flag == SOUTH) {
-		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
-			medical_camp_map[x + 1][y] = check_front();
+	else if(dir_flag == WEST) {									// If bot has come facing west so east exist. No need to check
 		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
-			medical_camp_map[x][y - 1] = turn_west();
-		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
-			medical_camp_map[x][y + 1] = turn_east();
-	}
-	else if(dir_flag == WEST) {
-		if(y - 1 >= 0 && medical_camp_map[x][y - 1] == 1)
-			medical_camp_map[x][y - 1] = check_front();
+			medical_camp_map[x][y - 1] = check_front();			// Check for path in west direction. If debris then fill 0 in corresponding cell of 2D arena representation
 		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
-			medical_camp_map[x - 1][y] = turn_north();
+			medical_camp_map[x - 1][y] = turn_north();			// Check for path in north direction. If debris then fill 0 in corresponding cell of 2D arena representation
 		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
-			medical_camp_map[x + 1][y] = turn_south();
+			medical_camp_map[x + 1][y] = turn_south();			// Check for path in south direction. If debris then fill 0 in corresponding cell of 2D arena representation
 	}
-	else {
+	else { 														// If bot has come facing east so west exist. No need to check
 		if(y + 1 < SIZE && medical_camp_map[x][y + 1] == 1)
-			medical_camp_map[x][y + 1] = check_front();
+			medical_camp_map[x][y + 1] = check_front();			// Check for path in east direction. If debris then fill 0 in corresponding cell of 2D arena representation
 		if(x - 1 >= 0 && medical_camp_map[x - 1][y] == 1)
-			medical_camp_map[x - 1][y] = turn_north();
+			medical_camp_map[x - 1][y] = turn_north();			// Check for path in north direction. If debris then fill 0 in corresponding cell of 2D arena representation
 		if(x + 1 < SIZE && medical_camp_map[x + 1][y] == 1)
-			medical_camp_map[x + 1][y] = turn_south();
+			medical_camp_map[x + 1][y] = turn_south();			// Check for path in south direction. If debris then fill 0 in corresponding cell of 2D arena representation
 	}
 }
 
+// To check whether node is mid point node or not
 unsigned char is_mid_node(Point &node) {
 	if (((node.x & 1) == 0 && (node.y & 1) == 1) || ((node.x & 1) == 1 && (node.y & 1) == 0))
 		return 1;
 	return 0;
 }
 
+// To print all results at the end of simulation
 void print_all_result(void) {
 	printf("\n\n");
 	unsigned char plot_no = 0;
@@ -522,15 +536,19 @@ void print_all_result(void) {
 	printf("\nNo. of Request satisfied = %d\n", satisfied);
 }
 
+// This function is move from one node to the next node
 unsigned char move(Point &source, Point &destination) {
 
+	// If bot is at corner node then check all direction for possible paths
 	if(!is_mid_node(source)) {
 		check_path_possible(source.x, source.y);
 	}
 
+	// If the cell corresponding to destination is 0, it means there is debris. So return and not move
 	if (medical_camp_map[destination.x][destination.y] == 0)
 		return 0;
 
+	// Turn to appropriate direction
 	if(destination.y < source.y) {
 		turn_west();
 	}
@@ -543,8 +561,11 @@ unsigned char move(Point &source, Point &destination) {
 	else {
 		turn_south();
 	}
+
+	// move 1 node forward
 	forward_wls(1);
 
+	// If it reach a mid node then take reading of plot if not taken earlier
 	if(is_mid_node(destination))
 		check_plot();
 
@@ -558,6 +579,7 @@ unsigned char move(Point &source, Point &destination) {
  *               'S' for scan request
 */
 // Reference : https://www.geeksforgeeks.org/shortest-distance-two-cells-matrix-grid/
+// It perform bfs in 2D representation of arena to find path to search character. If path exist then it returns the no. of nodes from current location to destination, otherwise, returns 0
 unsigned char bfs(unsigned char search_char) {
 
 	unsigned char visited[SIZE][SIZE];
@@ -632,64 +654,68 @@ unsigned char bfs(unsigned char search_char) {
 	return Stack.size();
 }
 
+// Used to traverse the path stored in stack (computed by bfs)
 unsigned char traverse_line_to_goal() {
 
 	Point temp = Stack.top();
 	Stack.pop();
 	while(!Stack.empty()) {
 
-		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {
+		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {                 // If 45 sec expired
 			printf("\n%d sec expired. New Request might come\n", TIME_INTERVAL_BETWEEN_EACH_REQUEST);
-			TimeCounter = 0.0;
-			request_no++;
+			TimeCounter = 0.0;					// Reset timer to 0
+			request_no++;						// Next request no.
 			return 0;
 		}
 
 		Point temp1 = Stack.top();
 		Stack.pop();
-		if(!move(temp, temp1)) {
-			return 2;
+		if(!move(temp, temp1)) { 					// Use move function to reach destination
+			return 2;								// If path is blocked by debris then return 2
 		}
 		temp = temp1;
 
-		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {
+		if(TimeCounter > TIME_INTERVAL_BETWEEN_EACH_REQUEST) {					// If 45 sec expired
 			printf("\n%d sec expired. New Request might come\n", TIME_INTERVAL_BETWEEN_EACH_REQUEST);
-			TimeCounter = 0.0;
-			request_no++;
+			TimeCounter = 0.0;										// Reset timer to 0
+			request_no++;											// Next request no.
 			return 0;
 		}
 
 	}
 
-	return 1;
+	return 1;		// If reached destination then return 1
 }
 
+// Used to scan arena
 void scan_arena(void) {
-	while(bfs(DESTINATION)) {
-		if(!traverse_line_to_goal()) {
+	while(bfs(DESTINATION)) {               // Scan until there is DESTINATION symbol in 2D representation of arena
+		if(!traverse_line_to_goal()) {		// if 45 sec has expired then check for next request
 			serve_request();
 		}
 	}
 }
 
+// Used to traverse to medical camp after scanning the entire arena
 void traverse_to_medical_camp(void) {
 	medical_camp_map[med_loc.x][med_loc.y] = DESTINATION;
-	while(bfs(DESTINATION) && traverse_line_to_goal() == 2);
-	move(curr_loc, med_loc);
-	turn_east();
-	forward_wls(1);
+	while(bfs(DESTINATION) && traverse_line_to_goal() == 2);  	// Find path and go until we reach at destination
+	move(curr_loc, med_loc);									// The bot will reach 1 node before the node connected to medical camp due to my implementation. So use move function once to move to node connected to medical camp
+	turn_east();												// Turn east to face medical camp
+	forward_wls(1);												// go forward to end at medical camp
 }
 
+// Used for scan request
 void scan(unsigned char plot, unsigned char completeIn) {
 	printf("\nRequest No. %d : Identify Survivor at plot %d in %d seconds\n", request_no, plot, completeIn);
 
 	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
 
-	TimeRemaining = completeIn;
+	TimeRemaining = completeIn;                // Stores time remaining for completing the request
 	Point cords = get_cords(plot);
-	unsigned char prev_value = medical_camp_map[cords.x][cords.y];
-	medical_camp_map[cords.x][cords.y] = SCAN;
+	unsigned char prev_value = medical_camp_map[cords.x][cords.y];  // Store previous value so that if we are not able to reach the plot, we can keep it back later
+	medical_camp_map[cords.x][cords.y] = SCAN;    // SCAN symbol will be used as search char in bfs
 	unsigned char reached = 0;
 
 	while((bfs(SCAN) - 1) * TIME_TO_COVER_1_LINE_AND_TURN <= TimeRemaining - 5) {
@@ -717,10 +743,10 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 	// This delay is not required. Just given so that we can see request in terminal. So it is not used for computing time elapsed
 	_delay_ms(2000);
 
-	TimeRemaining = completeIn;
+	TimeRemaining = completeIn;				 // Stores time remaining for completing the request
 
 	unsigned char reached = 0;
-	if(bfs(search_char)) {
+	if(bfs(search_char)) {					// It might be the case that there is no search_char in arena, i.e., we have not seen that particular injury earlier
 		while((bfs(search_char) - 1) * TIME_TO_COVER_1_LINE_AND_TURN <= TimeRemaining - 5) {
 			if(traverse_line_to_goal() == 1) {
 				reached = 1;
@@ -737,6 +763,7 @@ void fetch_nearest(unsigned char search_char, unsigned char completeIn) {
 
 }
 
+// Used for serving requests
 void serve_request(void) {
 
 	if(request_no == 1) {
@@ -793,6 +820,7 @@ void serve_request(void) {
 
 }
 
+// Path Planning algorithm
 void path_planning(void)
 {
 
