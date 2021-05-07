@@ -34,5 +34,14 @@
             "serverTime": 1616352180,
             "completeIn": 30
         }
+    },
+    {
+        "method": "scan",
+        "params": {
+            "plot": 1,
+            "id": 516584,
+            "serverTime": 1616352275,
+            "completeIn": 24
+        }
     }
 ]
