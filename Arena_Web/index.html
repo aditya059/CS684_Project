@@ -340,14 +340,20 @@
     
 </body>
 <script>
-// document.getElementById("plot_13").style.backgroundColor = 'green';
 
-
-
-bot = document.querySelector("#bot");
-bot.classList.add("bot_n");
-bot.style.top = '790px';
-bot.style.left = '934px';
+// request the server for values and update below
+// refresh page after update
+fetch('127.0.0.1:8082').then(function (response) {
+    return response.json();
+}).then(function (data) {
+    console.log("Data: ", data);
+    // parse data here, check if "N" is received
+    var a = 0, b = 0;
+    bot = document.querySelector("#bot");
+    bot.classList.add("bot_n");
+    bot.style.top = a + "px";
+    bot.style.left = b + "px";
+});
 
 </script>
 

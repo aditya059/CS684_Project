@@ -31,6 +31,9 @@ coap_port =5683
 coap_client = HelperClient(server =(coap_host, coap_port))
 coap_path = f"api/v1/{ACCESS_TOKEN}/telemetry"
 
+server_host = "127.0.0.1"
+server_port = 8082
+
 def keypress_handler(sender, data):
     global req_type
     recvd_data = data.decode("utf-8")
@@ -44,6 +47,7 @@ def keypress_handler(sender, data):
     else:
         coap_data["type"] = parts[1]
     coap_data = json.dumps(coap_data)
+    # send to flask server
     coap_client.post(coap_path, payload=coap_data)
 
 async def notify(client):
