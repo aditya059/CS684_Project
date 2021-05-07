@@ -25,6 +25,7 @@ address = (
 
 esp_payload = ""
 req_type = ""
+flask_data = ""
 
 coap_host = "13.250.13.141"
 coap_port =5683
@@ -34,8 +35,21 @@ coap_path = f"api/v1/{ACCESS_TOKEN}/telemetry"
 server_host = "127.0.0.1"
 server_port = 8082
 
+# start the server
+def server():
+    app = flask.Flask(__name__)
+    app.run(debug=True)
+
+# for the website to get updates
+@app.route("/")
+def home():
+    global flask_data
+    # return the new coordinates
+    if len(flask_data) > 0:
+        return flask_data
+
 def keypress_handler(sender, data):
-    global req_type
+    global req_type, flask_data
     recvd_data = data.decode("utf-8")
     print(f'Received in BLE: {recvd_data}')
     parts = recvd_data.split(" ")
@@ -47,7 +61,7 @@ def keypress_handler(sender, data):
     else:
         coap_data["type"] = parts[1]
     coap_data = json.dumps(coap_data)
-    # send to flask server
+    flask_data = coap_data
     coap_client.post(coap_path, payload=coap_data)
 
 async def notify(client):
@@ -140,3 +154,5 @@ t2 = threading.Thread(target=ble_thread)
 
 t1.start()
 t2.start()
+
+server()
