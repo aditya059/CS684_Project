@@ -15,4 +15,5 @@
 
 ---
 
-[Lab + Project Rulebook](.\CS684%20Spring%202021.pdf)
+[Lab + Project Rulebook](./CS684%20Spring%202021.pdf)
+
